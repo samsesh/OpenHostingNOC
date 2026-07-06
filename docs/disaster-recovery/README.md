@@ -20,7 +20,7 @@
 2. **Install prerequisites**:
    ```bash
    curl -fsSL https://get.docker.com | sh
-   git clone https://github.com/your-org/OpenHostingNOC.git
+   git clone https://github.com/samsesh/OpenHostingNOC.git
    ```
 3. **Restore from latest backup**:
    ```bash

@@ -165,7 +165,7 @@
 
 ```bash
 # Clone the repository
-git clone https://github.com/your-org/OpenHostingNOC.git
+git clone https://github.com/samsesh/OpenHostingNOC.git
 cd OpenHostingNOC
 
 # Configure environment
@@ -264,16 +264,16 @@ Full documentation is in the `docs/` directory and GitHub Wiki:
 
 | Topic | Docs | Wiki |
 |---|---|---|
-| Installation Guide | [docs/installation](docs/installation/README.md) | [Wiki](https://github.com/your-org/OpenHostingNOC/wiki/Installation) |
-| Configuration | [docs/configuration](docs/configuration/README.md) | [Wiki](https://github.com/your-org/OpenHostingNOC/wiki/Configuration) |
-| NetFlow Examples | [docs/configuration/netflow-examples.md](docs/configuration/netflow-examples.md) | [Wiki](https://github.com/your-org/OpenHostingNOC/wiki/NetFlow-Examples) |
-| Upgrade Guide | [docs/upgrade](docs/upgrade/README.md) | [Wiki](https://github.com/your-org/OpenHostingNOC/wiki/Upgrade) |
-| Backup & Restore | [docs/backup](docs/backup/README.md) | [Wiki](https://github.com/your-org/OpenHostingNOC/wiki/Backup-Restore) |
-| Troubleshooting | [docs/troubleshooting](docs/troubleshooting/README.md) | [Wiki](https://github.com/your-org/OpenHostingNOC/wiki/Troubleshooting) |
-| High Availability | [docs/ha](docs/ha/README.md) | [Wiki](https://github.com/your-org/OpenHostingNOC/wiki/High-Availability) |
-| Scaling | [docs/scaling](docs/scaling/README.md) | [Wiki](https://github.com/your-org/OpenHostingNOC/wiki/Scaling) |
-| Security | [docs/security](docs/security/README.md) | [Wiki](https://github.com/your-org/OpenHostingNOC/wiki/Security) |
-| Disaster Recovery | [docs/disaster-recovery](docs/disaster-recovery/README.md) | [Wiki](https://github.com/your-org/OpenHostingNOC/wiki/Disaster-Recovery) |
+| Installation Guide | [docs/installation](docs/installation/README.md) | [Wiki](https://github.com/samsesh/OpenHostingNOC/wiki/Installation) |
+| Configuration | [docs/configuration](docs/configuration/README.md) | [Wiki](https://github.com/samsesh/OpenHostingNOC/wiki/Configuration) |
+| NetFlow Examples | [docs/configuration/netflow-examples.md](docs/configuration/netflow-examples.md) | [Wiki](https://github.com/samsesh/OpenHostingNOC/wiki/NetFlow-Examples) |
+| Upgrade Guide | [docs/upgrade](docs/upgrade/README.md) | [Wiki](https://github.com/samsesh/OpenHostingNOC/wiki/Upgrade) |
+| Backup & Restore | [docs/backup](docs/backup/README.md) | [Wiki](https://github.com/samsesh/OpenHostingNOC/wiki/Backup-Restore) |
+| Troubleshooting | [docs/troubleshooting](docs/troubleshooting/README.md) | [Wiki](https://github.com/samsesh/OpenHostingNOC/wiki/Troubleshooting) |
+| High Availability | [docs/ha](docs/ha/README.md) | [Wiki](https://github.com/samsesh/OpenHostingNOC/wiki/High-Availability) |
+| Scaling | [docs/scaling](docs/scaling/README.md) | [Wiki](https://github.com/samsesh/OpenHostingNOC/wiki/Scaling) |
+| Security | [docs/security](docs/security/README.md) | [Wiki](https://github.com/samsesh/OpenHostingNOC/wiki/Security) |
+| Disaster Recovery | [docs/disaster-recovery](docs/disaster-recovery/README.md) | [Wiki](https://github.com/samsesh/OpenHostingNOC/wiki/Disaster-Recovery) |
 
 ---
 
@@ -379,8 +379,8 @@ MIT License — see [LICENSE](LICENSE) for details.
 
 ## Support
 
-- [GitHub Issues](https://github.com/your-org/OpenHostingNOC/issues)
-- [Discussions](https://github.com/your-org/OpenHostingNOC/discussions)
+- [GitHub Issues](https://github.com/samsesh/OpenHostingNOC/issues)
+- [Discussions](https://github.com/samsesh/OpenHostingNOC/discussions)
 
 ## Donate
 

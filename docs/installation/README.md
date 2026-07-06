@@ -42,7 +42,7 @@ docker compose version
 ### 2. Clone the Repository
 
 ```bash
-git clone https://github.com/your-org/OpenHostingNOC.git
+git clone https://github.com/samsesh/OpenHostingNOC.git
 cd OpenHostingNOC
 ```
 
