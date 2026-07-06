@@ -59,12 +59,22 @@ check_prereqs() {
     if [[ -f "${PROJECT_DIR}/.env" ]]; then
         log_info "Environment file found: .env"
     else
-        log_warn "No .env file found. Creating from .env.example..."
-        cp "${PROJECT_DIR}/.env.example" "${PROJECT_DIR}/.env"
-        log_info "Please edit .env with your configuration before continuing."
-        log_info "  nano ${PROJECT_DIR}/.env"
-        exit 1
+        log_warn "No .env file found."
+        echo ""
+        echo -e "  ${CYAN}1)${NC} Quick Setup  — nip.io domain, no TLS, default passwords"
+        echo -e "  ${CYAN}2)${NC} Full Setup   — real domain, Let's Encrypt TLS, secure passwords"
+        echo -e "  ${CYAN}3)${NC} Exit (I'll create .env manually)"
+        echo ""
+        read -r -p "Choose (1/2/3): " mode
+        case "$mode" in
+            1) "${SCRIPT_DIR}/generate-env.sh" --quick ;;
+            2) "${SCRIPT_DIR}/generate-env.sh" --full ;;
+            *) log_warn "Create .env manually from .env.example, then re-run install.sh"; exit 1 ;;
+        esac
     fi
+
+    # Source .env
+    set -a; source "${PROJECT_DIR}/.env"; set +a
 }
 
 # Create required directories
@@ -87,11 +97,29 @@ create_dirs() {
     log_info "Directories created successfully"
 }
 
+# Detect if running in quickstart mode (nip.io / no TLS)
+is_quickstart() {
+    local domain="${DOMAIN:-}"
+    [[ "$domain" == *".nip.io" || "$domain" == *".sslip.io" || "$domain" == *".xip.io" ]] && return 0
+    return 1
+}
+
+compose_files() {
+    local files=()
+    files+=("-f" "${PROJECT_DIR}/docker-compose.yml")
+    if is_quickstart; then
+        log_info "Quickstart mode detected (${DOMAIN}) — using HTTP, no TLS"
+        files+=("-f" "${PROJECT_DIR}/docker-compose.quickstart.yml")
+    fi
+    echo "${files[@]}"
+}
+
 # Pull Docker images
 pull_images() {
     log_step "Pulling Docker Images"
     
-    docker compose -f "${PROJECT_DIR}/docker-compose.yml" pull
+    # shellcheck disable=SC2046
+    docker compose $(compose_files) pull
     docker compose -f "${PROJECT_DIR}/docker-compose.yml" build auth-service
     log_info "Images pulled and built successfully"
 }
@@ -100,7 +128,8 @@ pull_images() {
 start_stack() {
     log_step "Starting OpenHostingNOC Stack"
     
-    docker compose -f "${PROJECT_DIR}/docker-compose.yml" up -d
+    # shellcheck disable=SC2046
+    docker compose $(compose_files) up -d
     log_info "Stack started successfully"
 }
 
@@ -122,8 +151,10 @@ wait_for_services() {
     
     for service in "${services[@]}"; do
         log_info "Waiting for $service..."
-        docker compose -f "${PROJECT_DIR}/docker-compose.yml" exec -T "$service" true 2>/dev/null || \
-        docker compose -f "${PROJECT_DIR}/docker-compose.yml" wait "$service" --timeout 120 2>/dev/null || \
+        # shellcheck disable=SC2046
+        docker compose $(compose_files) exec -T "$service" true 2>/dev/null || \
+        # shellcheck disable=SC2046
+        docker compose $(compose_files) wait "$service" --timeout 120 2>/dev/null || \
         log_warn "$service health check timed out"
     done
     
@@ -138,10 +169,14 @@ init_librenms() {
     sleep 30
     
     # Check if LibreNMS is ready
-    docker compose -f "${PROJECT_DIR}/docker-compose.yml" exec -T librenms \
+    # shellcheck disable=SC2046
+    docker compose $(compose_files) exec -T librenms \
         php /opt/librenms/init.php 2>/dev/null || true
     
-    log_info "LibreNMS initialized. Access at: https://librenms.${DOMAIN}"
+    local proto="https"
+    is_quickstart && proto="http"
+    # shellcheck disable=SC2154
+    log_info "LibreNMS initialized. Access at: ${proto}://librenms.${DOMAIN}"
 }
 
 # Install optional native components
@@ -192,16 +227,18 @@ post_install() {
     echo "╔══════════════════════════════════════════════════════════════════╗"
     echo "║           OpenHostingNOC Installation Complete                  ║"
     echo "╠══════════════════════════════════════════════════════════════════╣"
-    echo "║  Access URLs:                                                   ║"
+    local proto="https"
+    is_quickstart && proto="http"
+    echo "║  Access URLs (${proto}):                                          ║"
     echo "║                                                                  ║"
-    echo "║  Grafana:       https://grafana.\${DOMAIN}                       ║"
-    echo "║  LibreNMS:      https://librenms.\${DOMAIN}                      ║"
-    echo "║  ntopng:        https://ntopng.\${DOMAIN}                        ║"
-    echo "║  Prometheus:    https://prometheus.\${DOMAIN}                    ║"
-    echo "║  Alertmanager:  https://alertmanager.\${DOMAIN}                  ║"
-    echo "║  Loki:          https://loki.\${DOMAIN}                          ║"
-    echo "║  Dashboards:    https://dashboards.\${DOMAIN}                    ║"
-    echo "║  LDAP Admin:    https://ldap.\${DOMAIN}                          ║"
+    echo "║  Grafana:       ${proto}://grafana.\${DOMAIN}                     ║"
+    echo "║  LibreNMS:      ${proto}://librenms.\${DOMAIN}                    ║"
+    echo "║  ntopng:        ${proto}://ntopng.\${DOMAIN}                      ║"
+    echo "║  Prometheus:    ${proto}://prometheus.\${DOMAIN}                  ║"
+    echo "║  Alertmanager:  ${proto}://alertmanager.\${DOMAIN}                ║"
+    echo "║  Loki:          ${proto}://loki.\${DOMAIN}                        ║"
+    echo "║  Dashboards:    ${proto}://dashboards.\${DOMAIN}                  ║"
+    echo "║  LDAP Admin:    ${proto}://ldap.\${DOMAIN}                        ║"
     echo "║                                                                  ║"
     echo "║  Default Credentials:                                            ║"
     echo "║    - Check .env file for all passwords                           ║"

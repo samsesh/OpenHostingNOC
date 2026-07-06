@@ -1,0 +1,81 @@
+# =============================================================================
+# OpenHostingNOC - Quickstart Override (no domain, no TLS, default creds)
+# =============================================================================
+# Usage: docker compose -f docker-compose.yml -f docker-compose.quickstart.yml up -d
+# =============================================================================
+
+services:
+
+  # -----------------------------------------------------------------------
+  # Traefik - HTTP-only, no TLS, nip.io domain
+  # -----------------------------------------------------------------------
+  traefik:
+    command:
+      - --entrypoints.web.address=:${TRAEFIK_PORT:-80}
+      - --providers.docker=true
+      - --providers.docker.exposedbydefault=false
+      - --providers.docker.network=opennoc_traefik_public
+      - --providers.file.directory=/etc/traefik/dynamic
+      - --providers.file.watch=true
+      - --accesslog=true
+      - --accesslog.filepath=/var/log/traefik/access.log
+      - --accesslog.buffersize=100
+      - --metrics.prometheus=true
+      - --metrics.prometheus.addrouterslabels=true
+      - --metrics.prometheus.addentrypointslabels=true
+      - --metrics.prometheus.addserviceslabels=true
+      - --api.dashboard=true
+      - --api.debug=false
+      - --log.level=${LOG_LEVEL:-info}
+      - --log.filepath=/var/log/traefik/traefik.log
+    ports:
+      - "${TRAEFIK_PORT:-80}:${TRAEFIK_PORT:-80}"
+    labels:
+      traefik.http.routers.traefik.tls: "false"
+
+  # -----------------------------------------------------------------------
+  # Expose services on host ports (bypass Traefik for direct IP:port access)
+  # -----------------------------------------------------------------------
+  grafana:
+    ports:
+      - "${GRAFANA_PORT:-3000}:3000"
+
+  prometheus:
+    ports:
+      - "${PROMETHEUS_PORT:-9090}:9090"
+
+  alertmanager:
+    ports:
+      - "${ALERTMANAGER_PORT:-9093}:9093"
+
+  loki:
+    ports:
+      - "${LOKI_PORT:-3100}:3100"
+
+  librenms:
+    ports:
+      - "${LIBRENMS_PORT:-8000}:8000"
+
+  ntopng:
+    ports:
+      - "${NTOPNG_PORT:-3003}:3003"
+
+  opensearch-dashboards:
+    ports:
+      - "${OSD_PORT:-5601}:5601"
+
+  mariadb:
+    ports:
+      - "${MARIADB_PORT:-3306}:3306"
+
+  redis:
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+
+  auth-service:
+    ports:
+      - "${AUTH_PORT:-8081}:8081"
+
+  node-exporter:
+    ports:
+      - "${NODE_EXPORTER_PORT:-9100}:9100"
