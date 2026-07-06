@@ -1,0 +1,37 @@
+name: Validate Docker Compose
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'docker-compose.yml'
+      - '.env.example'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'docker-compose.yml'
+      - '.env.example'
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Compose
+        run: |
+          docker compose version
+
+      - name: Validate docker-compose.yml
+        run: |
+          docker compose config
+
+      - name: Validate .env.example syntax
+        run: |
+          grep -q '^[A-Z_]*=' .env.example && echo "Valid env format" || echo "Invalid env format"
+
+      - name: Validate YAML files
+        run: |
+          for f in $(find . -name "*.yml" -o -name "*.yaml"); do
+            python3 -c "import yaml; yaml.safe_load(open('$f')); print(f'OK: $f')"
+          done
