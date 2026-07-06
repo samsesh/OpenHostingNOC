@@ -8,7 +8,7 @@ This wiki content is stored in `.github/wiki/`. GitHub Wikis are separate git re
 # On GitHub: go to your repo → Wiki → Create the first page
 # Then clone the wiki repo:
 
-git clone https://github.com/your-org/OpenHostingNOC.wiki.git
+git clone https://github.com/samsesh/OpenHostingNOC.wiki.git
 ```
 
 ## Sync Content

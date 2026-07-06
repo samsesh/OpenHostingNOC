@@ -42,9 +42,9 @@ Welcome to the OpenHostingNOC wiki!
 
 | Resource | Link |
 |---|---|
-| Main Repository | [GitHub](https://github.com/your-org/OpenHostingNOC) |
-| Issue Tracker | [GitHub Issues](https://github.com/your-org/OpenHostingNOC/issues) |
-| Discussions | [GitHub Discussions](https://github.com/your-org/OpenHostingNOC/discussions) |
+| Main Repository | [GitHub](https://github.com/samsesh/OpenHostingNOC) |
+| Issue Tracker | [GitHub Issues](https://github.com/samsesh/OpenHostingNOC/issues) |
+| Discussions | [GitHub Discussions](https://github.com/samsesh/OpenHostingNOC/discussions) |
 | Docker Hub | [Coming Soon] |
 | Documentation | [docs/](../docs/) |
 

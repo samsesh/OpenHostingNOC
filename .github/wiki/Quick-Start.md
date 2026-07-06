@@ -12,7 +12,7 @@ Get OpenHostingNOC running in under 10 minutes.
 ## Step 1: Clone & Configure
 
 ```bash
-git clone https://github.com/your-org/OpenHostingNOC.git
+git clone https://github.com/samsesh/OpenHostingNOC.git
 cd OpenHostingNOC
 
 cp .env.example .env

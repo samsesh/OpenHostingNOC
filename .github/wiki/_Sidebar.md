@@ -22,6 +22,6 @@
 
 ### 📁 Repository
 
-- [README](https://github.com/your-org/OpenHostingNOC)
-- [Issues](https://github.com/your-org/OpenHostingNOC/issues)
-- [Discussions](https://github.com/your-org/OpenHostingNOC/discussions)
+- [README](https://github.com/samsesh/OpenHostingNOC)
+- [Issues](https://github.com/samsesh/OpenHostingNOC/issues)
+- [Discussions](https://github.com/samsesh/OpenHostingNOC/discussions)
