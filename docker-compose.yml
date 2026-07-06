@@ -218,7 +218,6 @@ services:
     healthcheck:
       <<: *healthcheck-start
       test: ["CMD", "traefik", "healthcheck", "--ping"]
-      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/ping || exit 1"]
 
   # -------------------------------------------------------------------------
   # OpenLDAP - LDAP Directory Service (Optional)
@@ -285,6 +284,51 @@ services:
       - traefik.http.routers.phpldapadmin.tls.certresolver=letsencrypt
       - traefik.http.routers.phpldapadmin.middlewares=secHeaders@file,ratelimit@file,ldap-auth
       - traefik.http.services.phpldapadmin.loadbalancer.server.port=80
+    logging: *default-logging
+    depends_on:
+      openldap:
+        condition: service_healthy
+
+  # -------------------------------------------------------------------------
+  # Auth Service - LDAP Forward Authentication (SSO)
+  # -------------------------------------------------------------------------
+  auth-service:
+    build:
+      context: ./auth
+      dockerfile: Dockerfile
+    <<: *restart-policy
+    profiles:
+      - full
+      - ldap
+    networks:
+      internal_net:
+        aliases:
+          - auth-service
+      ldap_net:
+    environment:
+      - LDAP_HOST=${LDAP_HOST:-openldap}
+      - LDAP_PORT=${LDAP_PORT:-389}
+      - LDAP_BASE_DN=${LDAP_BASE_DN:-dc=noc,dc=example,dc=com}
+      - LDAP_BIND_DN=${AUTH_LDAP_BIND_DN:-${LDAP_BIND_DN:-cn=admin,dc=noc,dc=example,dc=com}}
+      - LDAP_BIND_PASSWORD=${AUTH_LDAP_BIND_PASSWORD:-${LDAP_BIND_PASSWORD:-changeme}}
+      - LDAP_SEARCH_FILTER=${LDAP_SEARCH_FILTER:-(uid=%s)}
+      - LDAP_TLS=${LDAP_TLS:-false}
+      - AUTH_SECRET_KEY=${AUTH_SECRET_KEY:-changeme_auth_secret_key}
+      - AUTH_SESSION_MAX_AGE=${AUTH_SESSION_MAX_AGE:-86400}
+      - AUTH_DOMAIN=${AUTH_DOMAIN:-.${DOMAIN}}
+    deploy:
+      resources:
+        limits:
+          cpus: ${AUTH_CPU:-0.25}
+          memory: ${AUTH_MEM:-128M}
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.auth-service.entrypoints=websecure
+      - traefik.http.routers.auth-service.rule=Host(`auth.${DOMAIN}`)
+      - traefik.http.routers.auth-service.tls=true
+      - traefik.http.routers.auth-service.tls.certresolver=letsencrypt
+      - traefik.http.routers.auth-service.middlewares=secHeaders@file,ratelimit@file
+      - traefik.http.services.auth-service.loadbalancer.server.port=8081
     logging: *default-logging
     depends_on:
       openldap:
@@ -556,7 +600,7 @@ services:
       - traefik.http.routers.ntopng.rule=Host(`ntopng.${DOMAIN}`)
       - traefik.http.routers.ntopng.tls=true
       - traefik.http.routers.ntopng.tls.certresolver=letsencrypt
-      - traefik.http.routers.ntopng.middlewares=secHeaders@file,ratelimit@file
+      - traefik.http.routers.ntopng.middlewares=secHeaders@file,ratelimit@file,ldap-auth
       - traefik.http.services.ntopng.loadbalancer.server.port=3000
     depends_on:
       redis:
@@ -615,7 +659,7 @@ services:
       - traefik.http.routers.prometheus.rule=Host(`prometheus.${DOMAIN}`)
       - traefik.http.routers.prometheus.tls=true
       - traefik.http.routers.prometheus.tls.certresolver=letsencrypt
-      - traefik.http.routers.prometheus.middlewares=secHeaders@file,ratelimit@file
+      - traefik.http.routers.prometheus.middlewares=secHeaders@file,ratelimit@file,ldap-auth
       - traefik.http.services.prometheus.loadbalancer.server.port=9090
 
   # -------------------------------------------------------------------------
@@ -658,7 +702,7 @@ services:
       - traefik.http.routers.alertmanager.rule=Host(`alertmanager.${DOMAIN}`)
       - traefik.http.routers.alertmanager.tls=true
       - traefik.http.routers.alertmanager.tls.certresolver=letsencrypt
-      - traefik.http.routers.alertmanager.middlewares=secHeaders@file,ratelimit@file
+      - traefik.http.routers.alertmanager.middlewares=secHeaders@file,ratelimit@file,ldap-auth
       - traefik.http.services.alertmanager.loadbalancer.server.port=9093
 
   # -------------------------------------------------------------------------
@@ -750,7 +794,7 @@ services:
       - traefik.http.routers.loki.rule=Host(`loki.${DOMAIN}`)
       - traefik.http.routers.loki.tls=true
       - traefik.http.routers.loki.tls.certresolver=letsencrypt
-      - traefik.http.routers.loki.middlewares=secHeaders@file,ratelimit@file
+      - traefik.http.routers.loki.middlewares=secHeaders@file,ratelimit@file,ldap-auth
       - traefik.http.services.loki.loadbalancer.server.port=3100
 
   # -------------------------------------------------------------------------
@@ -864,7 +908,7 @@ services:
       - traefik.http.routers.opensearch-dashboards.rule=Host(`dashboards.${DOMAIN}`)
       - traefik.http.routers.opensearch-dashboards.tls=true
       - traefik.http.routers.opensearch-dashboards.tls.certresolver=letsencrypt
-      - traefik.http.routers.opensearch-dashboards.middlewares=secHeaders@file,ratelimit@file
+      - traefik.http.routers.opensearch-dashboards.middlewares=secHeaders@file,ratelimit@file,ldap-auth
       - traefik.http.services.opensearch-dashboards.loadbalancer.server.port=5601
     depends_on:
       opensearch:

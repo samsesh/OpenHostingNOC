@@ -92,7 +92,8 @@ pull_images() {
     log_step "Pulling Docker Images"
     
     docker compose -f "${PROJECT_DIR}/docker-compose.yml" pull
-    log_info "Images pulled successfully"
+    docker compose -f "${PROJECT_DIR}/docker-compose.yml" build auth-service
+    log_info "Images pulled and built successfully"
 }
 
 # Start the stack
@@ -109,6 +110,7 @@ wait_for_services() {
     
     local services=(
         "traefik"
+        "auth-service"
         "mariadb"
         "redis"
         "prometheus"

@@ -50,7 +50,7 @@ Key features:
 - Automatic Let's Encrypt certificate management
 - Rate limiting: 100 req/s average, 200 burst
 - Security headers: HSTS, CSP, X-Frame-Options
-- LDAP forward authentication
+- LDAP forward authentication via built-in auth service
 
 ### Prometheus
 

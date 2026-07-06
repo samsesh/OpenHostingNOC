@@ -89,13 +89,18 @@ if [[ ${#SERVICES[@]} -gt 0 ]]; then
     # Update specific services
     for service in "${SERVICES[@]}"; do
         log_info "Updating $service..."
-        docker compose -f "${PROJECT_DIR}/docker-compose.yml" pull "$service"
+        if [ "$service" = "auth-service" ]; then
+            docker compose -f "${PROJECT_DIR}/docker-compose.yml" build auth-service
+        else
+            docker compose -f "${PROJECT_DIR}/docker-compose.yml" pull "$service"
+        fi
         docker compose -f "${PROJECT_DIR}/docker-compose.yml" up -d --no-deps "$service"
     done
 else
     # Update all services
     CURRENT_HASH=$(docker compose -f "${PROJECT_DIR}/docker-compose.yml" images -q | md5sum 2>/dev/null || true)
     docker compose -f "${PROJECT_DIR}/docker-compose.yml" pull
+    docker compose -f "${PROJECT_DIR}/docker-compose.yml" build auth-service
     NEW_HASH=$(docker compose -f "${PROJECT_DIR}/docker-compose.yml" images -q | md5sum 2>/dev/null || true)
     
     if [[ "$CURRENT_HASH" != "$NEW_HASH" ]]; then

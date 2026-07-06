@@ -90,14 +90,25 @@ http:
         service: error-service
         query: /{status}.html
 
-    # ---- Auth Forward (LDAP) ----
+    # ---- Auth Forward (LDAP SSO) ----
     ldap-auth:
       forwardAuth:
-        address: http://traefik:8081/auth
+        address: http://auth-service:8081/auth
         authResponseHeaders:
           - X-Forwarded-User
           - X-Forwarded-Groups
           - X-Forwarded-Email
+          - X-Forwarded-Name
+        trustForwardHeader: true
+
+    sso-redirect:
+      forwardAuth:
+        address: http://auth-service:8081/auth
+        authResponseHeaders:
+          - X-Forwarded-User
+          - X-Forwarded-Groups
+          - X-Forwarded-Email
+          - X-Forwarded-Name
         trustForwardHeader: true
 
     # ---- Chain: Default Web ----

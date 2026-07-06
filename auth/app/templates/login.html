@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NOC Login</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <div class="login-container">
+    <div class="login-box">
+      <div class="logo">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#00BFA5" stroke-width="2">
+          <circle cx="12" cy="12" r="10"/>
+          <path d="M12 6v6l4 2"/>
+        </svg>
+        <h1>OpenHostingNOC</h1>
+        <p class="subtitle">Single Sign-On</p>
+      </div>
+      {% if error %}
+      <div class="error-box">
+        {% if error == "invalid" %}
+          Invalid username or password
+        {% elif error == "empty" %}
+          Please enter username and password
+        {% else %}
+          Authentication failed
+        {% endif %}
+      </div>
+      {% endif %}
+      <form method="post" action="/login">
+        <input type="hidden" name="rd" value="{{ rd }}">
+        <div class="form-group">
+          <label for="username">Username</label>
+          <input type="text" id="username" name="username" placeholder="LDAP username" required autofocus>
+        </div>
+        <div class="form-group">
+          <label for="password">Password</label>
+          <input type="password" id="password" name="password" placeholder="LDAP password" required>
+        </div>
+        <button type="submit">Sign In</button>
+      </form>
+      <p class="footer">Authenticate via LDAP &middot; OpenHostingNOC</p>
+    </div>
+  </div>
+</body>
+</html>
