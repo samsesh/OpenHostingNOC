@@ -760,7 +760,7 @@ services:
   # Loki - Log Aggregation System
   # -------------------------------------------------------------------------
   loki:
-    image: grafana/loki:3.8.0
+    image: grafana/loki:3.7.3
     <<: *restart-policy
     hostname: loki
     networks:
@@ -801,7 +801,7 @@ services:
   # Promtail - Log Collector (NOC Server)
   # -------------------------------------------------------------------------
   promtail:
-    image: grafana/promtail:3.8.0
+    image: grafana/promtail:3.6.11
     <<: *restart-policy
     hostname: promtail
     networks:
