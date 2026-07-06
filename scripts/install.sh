@@ -108,25 +108,32 @@ compose_files() {
     local files=()
     files+=("-f" "${PROJECT_DIR}/docker-compose.yml")
     if is_quickstart; then
-        log_info "Quickstart mode detected (${DOMAIN}) — using HTTP, no TLS"
         files+=("-f" "${PROJECT_DIR}/docker-compose.quickstart.yml")
     fi
     echo "${files[@]}"
 }
 
+log_compose_mode() {
+    if is_quickstart; then
+        log_info "Quickstart mode detected (${DOMAIN}) — using HTTP, no TLS"
+    fi
+}
+
 # Pull Docker images
 pull_images() {
     log_step "Pulling Docker Images"
+    log_compose_mode
     
     # shellcheck disable=SC2046
     docker compose $(compose_files) pull
-    docker compose -f "${PROJECT_DIR}/docker-compose.yml" build auth-service
+    docker compose $(compose_files) build auth-service
     log_info "Images pulled and built successfully"
 }
 
 # Start the stack
 start_stack() {
     log_step "Starting OpenHostingNOC Stack"
+    log_compose_mode
     
     # shellcheck disable=SC2046
     docker compose $(compose_files) up -d
@@ -136,6 +143,7 @@ start_stack() {
 # Wait for services
 wait_for_services() {
     log_step "Waiting for Services to Become Healthy"
+    log_compose_mode
     
     local services=(
         "traefik"
