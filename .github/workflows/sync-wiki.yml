@@ -1,0 +1,16 @@
+name: Sync Wiki
+on:
+  push:
+    branches: [main, Localhost]
+    paths:
+      - '.github/wiki/**'
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: leonstafford/git-auto-push-wiki@v1
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          wiki_dir: .github/wiki
