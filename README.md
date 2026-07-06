@@ -1,11 +1,12 @@
 <p align="center">
   <img src="https://img.shields.io/badge/version-1.0.0-blue.svg" alt="Version">
+  <img src="https://img.shields.io/badge/release-stable-00BFA5.svg" alt="Release">
   <img src="https://img.shields.io/badge/license-MIT-green.svg" alt="License">
   <img src="https://img.shields.io/badge/Docker-24.0%2B-2496ED" alt="Docker">
   <img src="https://img.shields.io/badge/Compose-v2.20%2B-2496ED" alt="Compose">
   <img src="https://img.shields.io/badge/OpenSearch-2.19-005EB8" alt="OpenSearch">
   <img src="https://img.shields.io/badge/Grafana-11-FF8F00" alt="Grafana">
-  <img src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fimg.shields.io%2Fbadge%2FLibreNMS-26.6-00BFA5&label=LibreNMS" alt="LibreNMS">
+  <img src="https://img.shields.io/badge/LibreNMS-26.6-00BFA5" alt="LibreNMS">
 </p>
 
 <h1 align="center">🔭 OpenHostingNOC</h1>
