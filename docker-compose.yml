@@ -1019,7 +1019,7 @@ services:
   # cAdvisor - Container Resource Monitoring
   # -------------------------------------------------------------------------
   cadvisor:
-    image: google/cadvisor:v0.60.1
+    image: ghcr.io/google/cadvisor:v0.57.0
     <<: *restart-policy
     hostname: cadvisor
     networks:
