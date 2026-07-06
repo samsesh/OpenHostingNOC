@@ -32,19 +32,23 @@ Add this workflow to `.github/workflows/sync-wiki.yml`:
 name: Sync Wiki
 on:
   push:
-    branches: [main]
+    branches: [main, Localhost]
     paths:
       - '.github/wiki/**'
+  workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
   sync:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: leonstafford/git-auto-push-wiki@v1
+      - uses: spenserblack/actions-wiki@v0.3.0
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          wiki_dir: .github/wiki
+          path: .github/wiki
+          token: ${{ secrets.GITHUB_TOKEN }}
 ```
 
 ## Wiki Files
