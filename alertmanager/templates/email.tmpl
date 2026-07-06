@@ -1,0 +1,67 @@
+{{- define "email.subject" -}}
+[{{ .GroupLabels.severity | toUpper }}] {{ .GroupLabels.alertname }} - {{ .CommonLabels.instance }}
+{{- end -}}
+
+{{- define "email.subject.critical" -}}
+[CRITICAL] {{ .GroupLabels.alertname }} - {{ .CommonLabels.instance }}
+{{- end -}}
+
+{{- define "email.subject.emergency" -}}
+[EMERGENCY] {{ .GroupLabels.alertname }} - {{ .CommonLabels.instance }}
+{{- end -}}
+
+{{- define "email.html" -}}
+<html>
+<body style="font-family: Arial, sans-serif; background-color: #1a1a2e; color: #e0e0e0; padding: 20px;">
+  <div style="max-width: 600px; margin: 0 auto;">
+    <div style="background-color: #16213e; padding: 20px; border-radius: 8px; border-left: 4px solid;
+      {{- if eq .GroupLabels.severity "emergency" }} #ff0000
+      {{- else if eq .GroupLabels.severity "critical" }} #ff6600
+      {{- else }} #ffcc00
+      {{- end }};">
+      <h2 style="margin: 0 0 15px 0; color: #e94560;">
+        {{- if eq .GroupLabels.severity "emergency" }} 🚨 EMERGENCY
+        {{- else if eq .GroupLabels.severity "critical" }} 🔴 CRITICAL
+        {{- else }} ⚠️ WARNING{{ end }}
+      </h2>
+      <p style="margin: 5px 0;"><strong>Alert:</strong> {{ .GroupLabels.alertname }}</p>
+      <p style="margin: 5px 0;"><strong>Instance:</strong> {{ .CommonLabels.instance }}</p>
+      <p style="margin: 5px 0;"><strong>Summary:</strong> {{ .CommonAnnotations.summary }}</p>
+      <p style="margin: 5px 0;"><strong>Description:</strong> {{ .CommonAnnotations.description }}</p>
+      <p style="margin: 5px 0;"><strong>Started at:</strong> {{ .StartsAt.Format "2006-01-02 15:04:05 UTC" }}</p>
+      <hr style="border: none; border-top: 1px solid #333; margin: 15px 0;">
+      <p style="font-size: 12px; color: #888;">
+        <a href="{{ .ExternalURL }}" style="color: #e94560;">View in Alertmanager</a>
+      </p>
+    </div>
+  </div>
+</body>
+</html>
+{{- end -}}
+
+{{- define "email.html.critical" -}}
+{{ template "email.html" . }}
+{{- end -}}
+
+{{- define "email.html.emergency" -}}
+<html>
+<body style="font-family: Arial, sans-serif; background-color: #1a1a2e; color: #e0e0e0; padding: 20px;">
+  <div style="max-width: 600px; margin: 0 auto;">
+    <div style="background-color: #2e0a0a; padding: 20px; border-radius: 8px; border-left: 4px solid #ff0000;">
+      <h2 style="margin: 0 0 15px 0; color: #ff0000;">🚨🚨🚨 EMERGENCY ALERT 🚨🚨🚨</h2>
+      <h3 style="color: #ff4444;">Immediate Action Required</h3>
+      <p style="margin: 5px 0;"><strong>Alert:</strong> {{ .GroupLabels.alertname }}</p>
+      <p style="margin: 5px 0;"><strong>Instance:</strong> {{ .CommonLabels.instance }}</p>
+      <p style="margin: 5px 0;"><strong>Summary:</strong> {{ .CommonAnnotations.summary }}</p>
+      <p style="margin: 5px 0;"><strong>Description:</strong> {{ .CommonAnnotations.description }}</p>
+      <p style="margin: 5px 0;"><strong>Current Value:</strong> {{ .CommonAnnotations.value }}</p>
+      <p style="margin: 5px 0;"><strong>Started at:</strong> {{ .StartsAt.Format "2006-01-02 15:04:05 UTC" }}</p>
+      <hr style="border: none; border-top: 1px solid #440000; margin: 15px 0;">
+      <p style="font-size: 12px; color: #888;">
+        <a href="{{ .ExternalURL }}" style="color: #ff4444;">View in Alertmanager</a>
+      </p>
+    </div>
+  </div>
+</body>
+</html>
+{{- end -}}

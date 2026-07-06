@@ -1,0 +1,103 @@
+# =============================================================================
+# Promtail Configuration - OpenHostingNOC
+# =============================================================================
+
+server:
+  http_listen_port: 9080
+  grpc_listen_port: 0
+  log_level: ${LOG_LEVEL:-info}
+
+positions:
+  filename: /etc/promtail/positions/positions.yml
+
+clients:
+  - url: http://loki:3100/loki/api/v1/push
+    timeout: 30s
+    backoff_config:
+      min_period: 100ms
+      max_period: 10s
+      max_retries: 10
+
+scrape_configs:
+
+  # Docker container logs
+  - job_name: docker
+    pipeline_stages:
+      - docker: {}
+      - static_labels:
+          job: docker
+    docker_sd_configs:
+      - host: unix:///var/run/docker.sock
+        refresh_interval: 15s
+    relabel_configs:
+      - source_labels: ['__meta_docker_container_name']
+        regex: '/(.*)'
+        target_label: container
+      - source_labels: ['__meta_docker_container_log_stream']
+        target_label: stream
+      - source_labels: ['__meta_docker_container_label_com_docker_compose_service']
+        target_label: service
+      - source_labels: ['__meta_docker_container_label_com_docker_compose_project']
+        target_label: compose_project
+
+  # System logs (NOC host)
+  - job_name: syslog
+    pipeline_stages:
+      - static_labels:
+          job: syslog
+          host: ${HOSTNAME:-opennoc}
+    static_configs:
+      - labels:
+          __path__: /var/log/syslog*
+          job: syslog
+      - labels:
+          __path__: /var/log/messages*
+          job: syslog
+      - labels:
+          __path__: /var/log/auth.log*
+          job: authlog
+      - labels:
+          __path__: /var/log/kern.log*
+          job: kernlog
+      - labels:
+          __path__: /var/log/daemon.log*
+          job: daemonlog
+    relabel_configs:
+      - source_labels: ['__path__']
+        target_label: logfile
+
+  # Traefik access logs
+  - job_name: traefik
+    pipeline_stages:
+      - regex:
+          expression: '(?P<remote_ip>\S+) (?P<host>\S+) (?P<user>\S+) \[(?P<timestamp>[^\]]+)\] "(?P<method>\S+) (?P<path>\S+) (?P<protocol>\S+)" (?P<status>\d+) (?P<body_bytes>\d+) "(?P<referer>[^"]*)" "(?P<user_agent>[^"]*)" (?P<request_count>\d+) (?P<response_count>\d+) (?P<request_duration>\d+\.\d+)'
+      - static_labels:
+          job: traefik
+    static_configs:
+      - labels:
+          __path__: /var/log/traefik/access.log*
+          service: traefik
+
+  # Prometheus logs
+  - job_name: prometheus
+    static_configs:
+      - labels:
+          __path__: /prometheus/data/logs/*
+          service: prometheus
+
+  # ntopng alerts
+  - job_name: ntopng_alerts
+    static_configs:
+      - targets: ['localhost:9080']
+    pipeline_stages:
+      - json:
+          expressions:
+            alert_type: alert_type
+            alert_severity: alert_severity
+            alert_timestamp: alert_timestamp
+            alert_message: alert_message
+      - static_labels:
+          job: ntopng_alerts
+      - labels:
+          alert_type:
+          alert_severity:

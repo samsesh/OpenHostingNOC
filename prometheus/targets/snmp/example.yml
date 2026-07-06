@@ -1,0 +1,36 @@
+# =============================================================================
+# SNMP Exporter Targets
+# =============================================================================
+# Format:
+#   - targets: ['device-ip']
+#     labels:
+#       host: device-name
+#       vendor: mikrotik|cisco|juniper|arista|fortinet
+#       role: router|switch|firewall
+#       location: dc1
+#     module: if_mib
+# ---------------------------------------------------------------------------
+
+- targets:
+    - '192.168.1.1'
+  labels:
+    host: core-router-01
+    vendor: mikrotik
+    role: router
+    location: dc1
+
+- targets:
+    - '192.168.1.2'
+  labels:
+    host: core-switch-01
+    vendor: cisco
+    role: switch
+    location: dc1
+
+- targets:
+    - '192.168.1.254'
+  labels:
+    host: firewall-01
+    vendor: fortinet
+    role: firewall
+    location: dc1

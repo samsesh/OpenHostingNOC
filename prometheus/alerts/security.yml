@@ -1,0 +1,156 @@
+# =============================================================================
+# Security Alert Rules - DDoS, Port Scans, Brute Force
+# =============================================================================
+
+groups:
+  - name: security
+    interval: 15s
+    rules:
+
+      # ---- High PPS (Packet Per Second) - DDoS Indicator ----
+      - alert: HighPPS
+        expr: rate(node_network_receive_packets_total[1m]) > 500000
+        for: 1m
+        labels:
+          severity: critical
+          category: security
+          attack_type: high_pps
+        annotations:
+          summary: "High PPS detected on {{ $labels.instance }}"
+          description: "{{ $labels.instance }} {{ $labels.device }} is receiving {{ $value | humanize }} PPS."
+          value: "{{ $value }}"
+          pps: "{{ $value }}"
+
+      - alert: ModeratePPS
+        expr: rate(node_network_receive_packets_total[1m]) > 100000
+        for: 2m
+        labels:
+          severity: warning
+          category: security
+          attack_type: moderate_pps
+        annotations:
+          summary: "Elevated PPS on {{ $labels.instance }}"
+          description: "{{ $labels.instance }} {{ $labels.device }} is receiving {{ $value | humanize }} PPS."
+
+      # ---- High BPS (Bandwidth) - Potential DDoS ----
+      - alert: HighBPS
+        expr: rate(node_network_receive_bytes_total[1m]) * 8 > 10e9
+        for: 1m
+        labels:
+          severity: critical
+          category: security
+          attack_type: high_bandwidth
+        annotations:
+          summary: "High bandwidth usage on {{ $labels.instance }}"
+          description: "{{ $labels.instance }} {{ $labels.device }} is receiving {{ $value | humanize }} bps."
+          value: "{{ $value }}"
+          bps: "{{ $value }}"
+
+      # ---- UDP Flood Indicator ----
+      - alert: PotentialUDPFlood
+        expr: rate(node_netstat_Udp_InDatagrams[1m]) > 50000
+        for: 30s
+        labels:
+          severity: critical
+          category: security
+          attack_type: udp_flood
+        annotations:
+          summary: "Potential UDP flood on {{ $labels.instance }}"
+          description: "{{ $labels.instance }} is processing {{ $value | humanize }} UDP datagrams/sec."
+          value: "{{ $value }}"
+
+      # ---- SYN Flood Indicator ----
+      - alert: PotentialSYNFlood
+        expr: rate(node_netstat_Tcp_ListenOverflows[1m]) > 1000
+        for: 1m
+        labels:
+          severity: critical
+          category: security
+          attack_type: syn_flood
+        annotations:
+          summary: "Potential SYN flood on {{ $labels.instance }}"
+          description: "{{ $labels.instance }} has {{ $value | humanize }} SYN queue overflows/sec."
+          value: "{{ $value }}"
+
+      # ---- ICMP Flood Indicator ----
+      - alert: PotentialICMPFlood
+        expr: rate(node_network_receive_packets_total{device="eth0"}[1m]) - rate(node_network_receive_packets_total{device="eth0"}[5m]) > 500000
+        for: 30s
+        labels:
+          severity: critical
+          category: security
+          attack_type: icmp_flood
+        annotations:
+          summary: "Potential ICMP flood on {{ $labels.instance }}"
+          description: "Sudden packet spike on {{ $labels.instance }}."
+
+      # ---- SSH Brute Force Detection ----
+      - alert: SSHBruleForceDetected
+        expr: rate(node_systemd_unit_state{name="ssh.service",state="active"}[5m]) > 0
+        for: 5m
+        labels:
+          severity: warning
+          category: security
+          attack_type: ssh_bruteforce
+        annotations:
+          summary: "SSH brute force attempt on {{ $labels.instance }}"
+          description: "Multiple SSH authentication failures detected on {{ $labels.instance }}."
+
+      # ---- Connection Tracking ----
+      - alert: ConnectionTableFull
+        expr: node_netstat_IpExt_ListenOverflows > 100
+        for: 1m
+        labels:
+          severity: critical
+          category: security
+          attack_type: connection_flood
+        annotations:
+          summary: "Connection table filling on {{ $labels.instance }}"
+          description: "{{ $labels.instance }} has {{ $value }} listen overflows."
+
+      - alert: HighConnectionRate
+        expr: rate(node_netstat_Tcp_CurrEstab[1m]) > 50000
+        for: 2m
+        labels:
+          severity: warning
+          category: security
+          attack_type: high_connections
+        annotations:
+          summary: "High connection count on {{ $labels.instance }}"
+          description: "{{ $labels.instance }} has {{ $value | humanize }} current TCP connections."
+
+      # ---- Port Scan Detection (via connection attempts) ----
+      - alert: PotentialPortScan
+        expr: rate(node_netstat_Tcp_AttemptFails[1m]) > 500
+        for: 1m
+        labels:
+          severity: warning
+          category: security
+          attack_type: port_scan
+        annotations:
+          summary: "Potential port scan on {{ $labels.instance }}"
+          description: "{{ $labels.instance }} has {{ $value }} failed TCP connection attempts/sec."
+
+      # ---- DNS Abuse Detection ----
+      - alert: PotentialDNSAmplification
+        expr: rate(node_network_transmit_bytes_total{device="eth0"}[1m]) * 8 > 1e9
+        for: 1m
+        labels:
+          severity: critical
+          category: security
+          attack_type: dns_amplification
+        annotations:
+          summary: "Potential DNS amplification attack on {{ $labels.instance }}"
+          description: "Outbound traffic spike on {{ $labels.instance }}."
+
+      # ---- Bogon / Spoofing Indicator ----
+      - alert: SuspiciousTraffic
+        expr: rate(node_network_receive_packets_total{device="eth0"}[1m]) > 1000000
+        for: 30s
+        labels:
+          severity: critical
+          category: security
+          attack_type: suspicious_traffic
+        annotations:
+          summary: "Suspicious traffic pattern on {{ $labels.instance }}"
+          description: "{{ $labels.instance }} is receiving extremely high packet rate."

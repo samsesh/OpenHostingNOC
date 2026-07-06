@@ -1,0 +1,170 @@
+{
+  "apiVersion": 1,
+  "id": 3,
+  "uid": "opennoc-traffic",
+  "title": "Traffic & Bandwidth",
+  "tags": ["opennoc", "traffic", "bandwidth"],
+  "timezone": "browser",
+  "editable": true,
+  "graphTooltip": 1,
+  "panels": [
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": { "mode": "absolute", "steps": [ { "color": "green", "value": null } ] },
+          "unit": "bps"
+        }
+      },
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 0 },
+      "id": 2,
+      "options": { "reduceOptions": { "values": false, "calcs": ["lastNotNull"], "fields": "" }, "orientation": "auto", "textMode": "auto", "colorMode": "value", "graphMode": "none", "justifyMode": "auto", "showPercentChange": false },
+      "targets": [
+        { "expr": "sum(rate(node_network_receive_bytes_total[5m])) * 8", "legendFormat": "Inbound", "refId": "A" }
+      ],
+      "title": "Total Inbound Bandwidth",
+      "type": "stat"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": { "mode": "absolute", "steps": [ { "color": "green", "value": null } ] },
+          "unit": "bps"
+        }
+      },
+      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 0 },
+      "id": 3,
+      "options": { "reduceOptions": { "values": false, "calcs": ["lastNotNull"], "fields": "" }, "orientation": "auto", "textMode": "auto", "colorMode": "value", "graphMode": "none", "justifyMode": "auto", "showPercentChange": false },
+      "targets": [
+        { "expr": "sum(rate(node_network_transmit_bytes_total[5m])) * 8", "legendFormat": "Outbound", "refId": "A" }
+      ],
+      "title": "Total Outbound Bandwidth",
+      "type": "stat"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": { "mode": "absolute", "steps": [ { "color": "green", "value": null } ] },
+          "unit": "pps"
+        }
+      },
+      "gridPos": { "h": 4, "w": 6, "x": 12, "y": 0 },
+      "id": 4,
+      "options": { "reduceOptions": { "values": false, "calcs": ["lastNotNull"], "fields": "" }, "orientation": "auto", "textMode": "auto", "colorMode": "value", "graphMode": "none", "justifyMode": "auto", "showPercentChange": false },
+      "targets": [
+        { "expr": "sum(rate(node_network_receive_packets_total[5m]))", "legendFormat": "Inbound", "refId": "A" }
+      ],
+      "title": "Total Inbound Packets",
+      "type": "stat"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": { "mode": "absolute", "steps": [ { "color": "green", "value": null } ] },
+          "unit": "pps"
+        }
+      },
+      "gridPos": { "h": 4, "w": 6, "x": 18, "y": 0 },
+      "id": 5,
+      "options": { "reduceOptions": { "values": false, "calcs": ["lastNotNull"], "fields": "" }, "orientation": "auto", "textMode": "auto", "colorMode": "value", "graphMode": "none", "justifyMode": "auto", "showPercentChange": false },
+      "targets": [
+        { "expr": "sum(rate(node_network_transmit_packets_total[5m]))", "legendFormat": "Outbound", "refId": "A" }
+      ],
+      "title": "Total Outbound Packets",
+      "type": "stat"
+    },
+    {
+      "datasource": "Prometheus",
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 4 },
+      "id": 6,
+      "options": {
+        "legend": { "calcs": ["min", "max", "avg", "last"], "displayMode": "table", "placement": "bottom", "showLegend": true },
+        "tooltip": { "mode": "multi", "sort": "none" }
+      },
+      "targets": [
+        { "expr": "topk(10, sum by(instance) (rate(node_network_receive_bytes_total[5m]) * 8))", "legendFormat": "{{ instance }}", "refId": "A" }
+      ],
+      "title": "Top 10 Receivers (Inbound Bandwidth)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": "Prometheus",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 12 },
+      "id": 7,
+      "options": {
+        "legend": { "calcs": ["min", "max", "avg", "last"], "displayMode": "table", "placement": "bottom", "showLegend": true },
+        "tooltip": { "mode": "multi", "sort": "none" }
+      },
+      "targets": [
+        { "expr": "sum by(device) (rate(node_network_receive_bytes_total[5m]) * 8)", "legendFormat": "RX: {{ device }}", "refId": "A" },
+        { "expr": "sum by(device) (rate(node_network_transmit_bytes_total[5m]) * 8)", "legendFormat": "TX: {{ device }}", "refId": "B" }
+      ],
+      "title": "Bandwidth by Interface",
+      "type": "timeseries"
+    },
+    {
+      "datasource": "Prometheus",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 12 },
+      "id": 8,
+      "options": {
+        "legend": { "calcs": ["min", "max", "avg", "last"], "displayMode": "table", "placement": "bottom", "showLegend": true },
+        "tooltip": { "mode": "multi", "sort": "none" }
+      },
+      "targets": [
+        { "expr": "topk(10, sum by(instance) (rate(node_network_receive_bytes_total[5m]) * 8)) - topk(10, sum by(instance) (rate(node_network_transmit_bytes_total[5m]) * 8))", "legendFormat": "{{ instance }}", "refId": "A" }
+      ],
+      "title": "Net Traffic by Host",
+      "type": "timeseries"
+    },
+    {
+      "datasource": "Prometheus",
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 20 },
+      "id": 9,
+      "options": {
+        "legend": { "calcs": ["min", "max", "avg", "last"], "displayMode": "table", "placement": "bottom", "showLegend": true },
+        "tooltip": { "mode": "multi", "sort": "none" }
+      },
+      "targets": [
+        { "expr": "sum by(instance) (rate(ifHCInOctets{job=\"snmp\"}[5m]) * 8)", "legendFormat": "{{ instance }}: {{ ifName }}", "refId": "A" }
+      ],
+      "title": "SNMP Interface Bandwidth",
+      "type": "timeseries"
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 39,
+  "style": "dark",
+  "tags": ["opennoc", "traffic", "bandwidth"],
+  "templating": {
+    "list": [
+      {
+        "definition": "label_values(node_network_receive_bytes_total, instance)",
+        "hide": 0,
+        "includeAll": true,
+        "multi": true,
+        "name": "host",
+        "options": [],
+        "query": { "query": "label_values(node_network_receive_bytes_total, instance)", "refId": "Prometheus-host" },
+        "refresh": 1,
+        "type": "query"
+      }
+    ]
+  },
+  "time": { "from": "now-6h", "to": "now" },
+  "timepicker": {
+    "refresh_intervals": ["5s", "10s", "30s", "1m", "5m", "15m", "30m", "1h", "2h", "1d"],
+    "time_options": ["5m", "15m", "1h", "6h", "12h", "24h", "2d", "7d", "30d"]
+  },
+  "timezone": "browser",
+  "title": "Traffic & Bandwidth",
+  "uid": "opennoc-traffic",
+  "version": 1,
+  "weekStart": ""
+}

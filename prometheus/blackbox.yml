@@ -1,0 +1,86 @@
+# =============================================================================
+# Blackbox Exporter Configuration
+# =============================================================================
+
+modules:
+  # ICMP Ping
+  icmp:
+    prober: icmp
+    timeout: 10s
+    icmp:
+      preferred_ip_protocol: ip4
+      source_ip_address: ""
+
+  # HTTP 2xx check
+  http_2xx:
+    prober: http
+    timeout: 10s
+    http:
+      valid_status_codes: []
+      method: GET
+      preferred_ip_protocol: ip4
+      fail_if_ssl: false
+      fail_if_not_ssl: false
+      tls_config:
+        insecure_skip_verify: false
+      follow_redirects: true
+
+  # HTTP 2xx with POST
+  http_post_2xx:
+    prober: http
+    timeout: 10s
+    http:
+      method: POST
+      preferred_ip_protocol: ip4
+
+  # TCP connect
+  tcp_connect:
+    prober: tcp
+    timeout: 10s
+    tcp:
+      preferred_ip_protocol: ip4
+
+  # DNS query (UDP)
+  dns_udp:
+    prober: dns
+    timeout: 10s
+    dns:
+      protocol: udp
+      preferred_ip_protocol: ip4
+      query_name: google.com
+      query_type: A
+      valid_rcodes:
+        - NOERROR
+        - NXDOMAIN
+
+  # DNS query (TCP)
+  dns_tcp:
+    prober: dns
+    timeout: 10s
+    dns:
+      protocol: tcp
+      preferred_ip_protocol: ip4
+      query_name: google.com
+      query_type: A
+
+  # HTTPS certificate check
+  https_cert:
+    prober: http
+    timeout: 30s
+    http:
+      method: GET
+      preferred_ip_protocol: ip4
+      tls_config:
+        insecure_skip_verify: true
+      fail_if_not_ssl: true
+      fail_if_ssl: false
+      valid_status_codes: []
+      follow_redirects: false
+      no_follow_redirects: true
+
+  # ICMP IPv6
+  icmp_ipv6:
+    prober: icmp
+    timeout: 10s
+    icmp:
+      preferred_ip_protocol: ip6

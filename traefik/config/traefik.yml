@@ -1,0 +1,8 @@
+# =============================================================================
+# Traefik Static Configuration
+# =============================================================================
+# This file provides the static configuration for traefik.
+# Loaded via command-line flags in docker-compose.yml for simplicity.
+
+# Dynamic configuration is in the /etc/traefik/dynamic/ directory.
+# See middleware, routers, and services in separate YAML files.

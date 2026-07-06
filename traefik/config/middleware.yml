@@ -1,0 +1,124 @@
+# =============================================================================
+# Traefik Dynamic Config - Middlewares
+# =============================================================================
+http:
+  middlewares:
+
+    # ---- Security Headers ----
+    secHeaders:
+      headers:
+        browserXSSFilter: true
+        contentTypeNosniff: true
+        frameDeny: true
+        sslRedirect: true
+        stsIncludeSubdomains: true
+        stsPreload: true
+        stsSeconds: 31536000
+        customFrameOptionsValue: "SAMEORIGIN"
+        referrerPolicy: "strict-origin-when-cross-origin"
+        permissionsPolicy: "camera=(), microphone=(), geolocation=(), interest-cohort=()"
+        contentSecurityPolicy: |
+          default-src 'self';
+          script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdnjs.cloudflare.com;
+          style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://fonts.googleapis.com;
+          font-src 'self' https://fonts.gstatic.com data:;
+          img-src 'self' data: https:;
+          connect-src 'self' https: wss:;
+          object-src 'none';
+          frame-ancestors 'self';
+          base-uri 'self';
+        customResponseHeaders:
+          X-Robots-Tag: "noindex, nofollow"
+          X-Permitted-Cross-Domain-Policies: "none"
+        accessControlAllowMethods:
+          - GET
+          - POST
+          - PUT
+          - PATCH
+          - DELETE
+          - OPTIONS
+        accessControlAllowHeaders:
+          - Authorization
+          - Content-Type
+          - X-Requested-With
+          - X-Forwarded-User
+        accessControlExposeHeaders:
+          - X-Request-Id
+        addVaryHeader: true
+
+    # ---- Rate Limiting ----
+    ratelimit:
+      rateLimit:
+        average: ${TRAEFIK_RATE_LIMIT_AVERAGE:-100}
+        burst: ${TRAEFIK_RATE_LIMIT_BURST:-200}
+        period: 1m
+        sourceCriterion:
+          ipStrategy:
+            depth: 1
+
+    # ---- Compression ----
+    compress:
+      compress:
+        excludedContentTypes:
+          - text/event-stream
+          - application/octet-stream
+
+    # ---- IP Whitelisting for Admin ----
+    admin-whitelist:
+      ipWhiteList:
+        sourceRange:
+          - 10.0.0.0/8
+          - 172.16.0.0/12
+          - 192.168.0.0/16
+
+    # ---- HTTP -> HTTPS Redirect ----
+    redirect-https:
+      redirectScheme:
+        scheme: https
+        permanent: true
+
+    # ---- Error Pages ----
+    errorpages:
+      errors:
+        status:
+          - 403
+          - 404
+          - 500
+          - 502
+          - 503
+          - 504
+        service: error-service
+        query: /{status}.html
+
+    # ---- Auth Forward (LDAP) ----
+    ldap-auth:
+      forwardAuth:
+        address: http://traefik:8081/auth
+        authResponseHeaders:
+          - X-Forwarded-User
+          - X-Forwarded-Groups
+          - X-Forwarded-Email
+        trustForwardHeader: true
+
+    # ---- Chain: Default Web ----
+    chain-default:
+      chain:
+        middlewares:
+          - secHeaders
+          - ratelimit
+          - compress
+
+    # ---- Chain: Admin ----
+    chain-admin:
+      chain:
+        middlewares:
+          - secHeaders
+          - ratelimit
+          - compress
+          - admin-whitelist
+
+  services:
+    error-service:
+      loadBalancer:
+        servers:
+          - url: http://traefik:8080

@@ -1,0 +1,1011 @@
+# =============================================================================
+# OpenHostingNOC - Docker Compose
+# =============================================================================
+# Production-ready deployment for hosting provider NOC platform.
+# Supports 1-100 Gbps monitoring infrastructure.
+# =============================================================================
+
+name: opennoc
+
+x-logging: &default-logging
+  driver: ${LOG_DRIVER:-json-file}
+  options:
+    max-size: ${LOG_MAX_SIZE:-10m}
+    max-file: ${LOG_MAX_FILE:-3}
+
+x-restart: &restart-policy
+  restart: unless-stopped
+
+x-healthcheck: &healthcheck-start
+  start_period: 30s
+  interval: 15s
+  timeout: 10s
+  retries: 3
+
+# ---------------------------------------------------------------------------
+# Networks
+# ---------------------------------------------------------------------------
+networks:
+  traefik_public:
+    name: opennoc_traefik_public
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 10.10.0.0/24
+
+  internal_net:
+    name: opennoc_internal
+    driver: bridge
+    internal: false
+    ipam:
+      config:
+        - subnet: 10.10.1.0/24
+
+  monitoring_net:
+    name: opennoc_monitoring
+    driver: bridge
+    internal: false
+    ipam:
+      config:
+        - subnet: 10.10.2.0/24
+
+  database_net:
+    name: opennoc_database
+    driver: bridge
+    internal: false
+    ipam:
+      config:
+        - subnet: 10.10.3.0/24
+
+  opensearch_net:
+    name: opennoc_opensearch
+    driver: bridge
+    internal: false
+    ipam:
+      config:
+        - subnet: 10.10.4.0/24
+
+  ldap_net:
+    name: opennoc_ldap
+    driver: bridge
+    internal: false
+    ipam:
+      config:
+        - subnet: 10.10.5.0/24
+
+# ---------------------------------------------------------------------------
+# Volumes
+# ---------------------------------------------------------------------------
+volumes:
+  traefik_certs:
+    name: opennoc_traefik_certs
+
+  grafana_data:
+    name: opennoc_grafana_data
+
+  grafana_reports:
+    name: opennoc_grafana_reports
+
+  prometheus_data:
+    name: opennoc_prometheus_data
+
+  loki_data:
+    name: opennoc_loki_data
+
+  loki_backup:
+    name: opennoc_loki_backup
+
+  alertmanager_data:
+    name: opennoc_alertmanager_data
+
+  librenms_data:
+    name: opennoc_librenms_data
+
+  librenms_rrd:
+    name: opennoc_librenms_rrd
+
+  librenms_logs:
+    name: opennoc_librenms_logs
+
+  librenms_oxidized:
+    name: opennoc_librenms_oxidized
+
+  ntopng_data:
+    name: opennoc_ntopng_data
+
+  ntopng_logs:
+    name: opennoc_ntopng_logs
+
+  opensearch_data:
+    name: opennoc_opensearch_data
+
+  opensearch_backup:
+    name: opennoc_opensearch_backup
+
+  opensearch_dashboards_data:
+    name: opennoc_opensearch_dashboards_data
+
+  mariadb_data:
+    name: opennoc_mariadb_data
+
+  mariadb_backup:
+    name: opennoc_mariadb_backup
+
+  redis_data:
+    name: opennoc_redis_data
+
+  openldap_data:
+    name: opennoc_openldap_data
+
+  openldap_config:
+    name: opennoc_openldap_config
+
+# =============================================================================
+# Services
+# =============================================================================
+services:
+
+  # -------------------------------------------------------------------------
+  # Traefik - Reverse Proxy & TLS Termination
+  # -------------------------------------------------------------------------
+  traefik:
+    image: traefik:v3.7
+    <<: *restart-policy
+    command:
+      # Entrypoints
+      - --entrypoints.web.address=:${TRAEFIK_ENTRYPOINT_HTTP:-80}
+      - --entrypoints.websecure.address=:${TRAEFIK_ENTRYPOINT_HTTPS:-443}
+      - --entrypoints.web.http.redirections.entrypoint.to=websecure
+      - --entrypoints.web.http.redirections.entrypoint.scheme=https
+      - --entrypoints.web.http.redirections.entrypoint.permanent=true
+      # Providers
+      - --providers.docker=true
+      - --providers.docker.exposedbydefault=false
+      - --providers.docker.network=opennoc_traefik_public
+      - --providers.file.directory=/etc/traefik/dynamic
+      - --providers.file.watch=true
+      # ACME / Let's Encrypt
+      - --certificatesresolvers.letsencrypt.acme.tlschallenge=true
+      - --certificatesresolvers.letsencrypt.acme.email=${TRAEFIK_ACME_EMAIL:-admin@example.com}
+      - --certificatesresolvers.letsencrypt.acme.storage=/certs/acme.json
+      - --certificatesresolvers.letsencrypt.acme.caserver=${TRAEFIK_ACME_CA_SERVER:-https://acme-v02.api.letsencrypt.org/directory}
+      # Access Log
+      - --accesslog=true
+      - --accesslog.filepath=/var/log/traefik/access.log
+      - --accesslog.buffersize=100
+      # Metrics
+      - --metrics.prometheus=true
+      - --metrics.prometheus.addrouterslabels=true
+      - --metrics.prometheus.addentrypointslabels=true
+      - --metrics.prometheus.addserviceslabels=true
+      # API / Dashboard
+      - --api.dashboard=true
+      - --api.debug=false
+      # Logging
+      - --log.level=${LOG_LEVEL:-info}
+      - --log.filepath=/var/log/traefik/traefik.log
+    ports:
+      - ${TRAEFIK_ENTRYPOINT_HTTP:-80}:${TRAEFIK_ENTRYPOINT_HTTP:-80}
+      - ${TRAEFIK_ENTRYPOINT_HTTPS:-443}:${TRAEFIK_ENTRYPOINT_HTTPS:-443}
+    networks:
+      traefik_public:
+        aliases:
+          - traefik
+      internal_net:
+        aliases:
+          - traefik
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - traefik_certs:/certs
+      - ./traefik/config:/etc/traefik/dynamic:ro
+    environment:
+      - TZ=${TIMEZONE:-UTC}
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.traefik.entrypoints=websecure
+      - traefik.http.routers.traefik.rule=Host(`traefik.${DOMAIN}`)
+      - traefik.http.routers.traefik.tls=true
+      - traefik.http.routers.traefik.tls.certresolver=letsencrypt
+      - traefik.http.routers.traefik.middlewares=secHeaders@file,ratelimit@file,traefik-auth
+      - traefik.http.middlewares.traefik-auth.basicauth.usersfile=/etc/traefik/dynamic/users.htpasswd
+      - traefik.http.services.traefik.loadbalancer.server.port=8080
+    deploy:
+      resources:
+        limits:
+          cpus: ${TRAEFIK_CPU:-1}
+          memory: ${TRAEFIK_MEM:-512M}
+    logging: *default-logging
+    healthcheck:
+      <<: *healthcheck-start
+      test: ["CMD", "traefik", "healthcheck", "--ping"]
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/ping || exit 1"]
+
+  # -------------------------------------------------------------------------
+  # OpenLDAP - LDAP Directory Service (Optional)
+  # -------------------------------------------------------------------------
+  openldap:
+    image: osixia/openldap:latest
+    <<: *restart-policy
+    profiles:
+      - full
+      - ldap
+    networks:
+      ldap_net:
+        aliases:
+          - openldap
+      internal_net:
+    volumes:
+      - openldap_data:/var/lib/ldap
+      - openldap_config:/etc/ldap/slapd.d
+      - ./security/ldap:/container/service/slapd/assets/config/bootstrap:ro
+    environment:
+      - LDAP_ORGANISATION=${OPENLDAP_ORGANISATION:-OpenHostingNOC}
+      - LDAP_DOMAIN=${OPENLDAP_DOMAIN:-noc.example.com}
+      - LDAP_ADMIN_PASSWORD=${OPENLDAP_ADMIN_PASSWORD:-changeme}
+      - LDAP_CONFIG_PASSWORD=${OPENLDAP_ADMIN_PASSWORD:-changeme}
+      - LDAP_READONLY_USER=false
+      - LDAP_RFC2307BIS_ENABLED=true
+      - LDAP_BASE_DN=${LDAP_BASE_DN:-dc=noc,dc=example,dc=com}
+      - LDAP_TLS=${LDAP_TLS:-false}
+      - LDAP_TLS_ENFORCE=false
+      - TZ=${TIMEZONE:-UTC}
+    deploy:
+      resources:
+        limits:
+          cpus: ${OPENLDAP_CPU:-0.5}
+          memory: ${OPENLDAP_MEM:-256M}
+    logging: *default-logging
+    healthcheck:
+      <<: *healthcheck-start
+      test: ["CMD-SHELL", "ldapsearch -x -H ldap://localhost:389 -b '' -s base '(objectclass=*)' 2>/dev/null || exit 1"]
+
+  phpldapadmin:
+    image: osixia/phpldapadmin:latest
+    <<: *restart-policy
+    profiles:
+      - full
+      - ldap
+    networks:
+      ldap_net:
+      internal_net:
+    environment:
+      - PHPLDAPADMIN_LDAP_HOSTS=openldap
+      - PHPLDAPADMIN_HTTPS=false
+      - TZ=${TIMEZONE:-UTC}
+    deploy:
+      resources:
+        limits:
+          cpus: 0.25
+          memory: 128M
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.phpldapadmin.entrypoints=websecure
+      - traefik.http.routers.phpldapadmin.rule=Host(`ldap.${DOMAIN}`)
+      - traefik.http.routers.phpldapadmin.tls=true
+      - traefik.http.routers.phpldapadmin.tls.certresolver=letsencrypt
+      - traefik.http.routers.phpldapadmin.middlewares=secHeaders@file,ratelimit@file,ldap-auth
+      - traefik.http.services.phpldapadmin.loadbalancer.server.port=80
+    logging: *default-logging
+    depends_on:
+      openldap:
+        condition: service_healthy
+
+  # -------------------------------------------------------------------------
+  # MariaDB - Database for LibreNMS
+  # -------------------------------------------------------------------------
+  mariadb:
+    image: mariadb:11
+    <<: *restart-policy
+    hostname: mariadb
+    networks:
+      database_net:
+        aliases:
+          - mariadb
+    volumes:
+      - mariadb_data:/var/lib/mysql
+      - mariadb_backup:/backups
+      - ./mariadb/config:/etc/mysql/conf.d:ro
+    environment:
+      - MYSQL_ROOT_PASSWORD=${MARIADB_ROOT_PASSWORD:-changeme}
+      - MYSQL_DATABASE=${MARIADB_DATABASE:-librenms}
+      - MYSQL_USER=${MARIADB_USER:-librenms}
+      - MYSQL_PASSWORD=${MARIADB_PASSWORD:-changeme}
+      - TZ=${TIMEZONE:-UTC}
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --innodb_file_per_table=1
+      - --innodb_buffer_pool_size=2G
+      - --innodb_log_file_size=256M
+      - --innodb_flush_method=O_DIRECT
+      - --innodb_flush_log_at_trx_commit=2
+      - --max_connections=500
+      - --thread_cache_size=256
+      - --query_cache_size=0
+      - --query_cache_type=0
+      - --tmp_table_size=256M
+      - --max_heap_table_size=256M
+      - --table_open_cache=4000
+      - --open_files_limit=65536
+      - --bind-address=0.0.0.0
+      - --skip-name-resolve=1
+      - --log-bin=/var/lib/mysql/mariadb-bin
+      - --expire-logs-days=7
+      - --max-binlog-size=100M
+    deploy:
+      resources:
+        limits:
+          cpus: ${MARIADB_CPU:-2}
+          memory: ${MARIADB_MEM:-4G}
+        reservations:
+          memory: ${MARIADB_MEM_RESERVATION:-2G}
+    logging: *default-logging
+    healthcheck:
+      <<: *healthcheck-start
+      test: ["CMD", "healthcheck.sh", "--su-mysql", "--connect", "--innodb_initialized"]
+
+  # -------------------------------------------------------------------------
+  # Redis - Cache & Queue
+  # -------------------------------------------------------------------------
+  redis:
+    image: redis:7-alpine
+    <<: *restart-policy
+    hostname: redis
+    networks:
+      database_net:
+        aliases:
+          - redis
+      internal_net:
+    volumes:
+      - redis_data:/data
+    environment:
+      - TZ=${TIMEZONE:-UTC}
+    command:
+      - redis-server
+      - --requirepass ${REDIS_PASSWORD:-changeme}
+      - --appendonly yes
+      - --appendfsync everysec
+      - --maxmemory ${REDIS_MAXMEMORY:-512mb}
+      - --maxmemory-policy ${REDIS_MAXMEMORY_POLICY:-allkeys-lru}
+      - --save 60 1000
+      - --save 300 100
+      - --save 900 1
+      - --tcp-keepalive 60
+    deploy:
+      resources:
+        limits:
+          cpus: ${REDIS_CPU:-1}
+          memory: ${REDIS_MEM:-1G}
+    logging: *default-logging
+    healthcheck:
+      <<: *healthcheck-start
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-changeme}", "ping"]
+
+  # -------------------------------------------------------------------------
+  # LibreNMS - Network Monitoring System
+  # -------------------------------------------------------------------------
+  librenms:
+    image: librenms/librenms:26.6.0
+    <<: *restart-policy
+    hostname: librenms
+    networks:
+      internal_net:
+        aliases:
+          - librenms
+      database_net:
+      ldap_net:
+    volumes:
+      - librenms_data:/data
+      - librenms_rrd:/opt/librenms/rrd
+      - librenms_logs:/opt/librenms/logs
+      - librenms_oxidized:/opt/librenms/.OXIDIZED_HOME
+      - ./librenms/config/librenms.php:/opt/librenms/config.php:ro
+      - ./librenms/config/snmp.conf:/etc/snmp/snmp.conf:ro
+    environment:
+      - TZ=${TIMEZONE:-UTC}
+      - DOCKER_MODS=linuxserver/mods:universal-cron
+      - LIBRENMS_DB_HOST=mariadb
+      - LIBRENMS_DB_PORT=3306
+      - LIBRENMS_DB_NAME=${LIBRENMS_DB_NAME:-librenms}
+      - LIBRENMS_DB_USER=${LIBRENMS_DB_USER:-librenms}
+      - LIBRENMS_DB_PASSWORD=${LIBRENMS_DB_PASSWORD:-changeme}
+      - LIBRENMS_DB_TIMEOUT=600
+      - LIBRENMS_REDIS_HOST=redis
+      - LIBRENMS_REDIS_PORT=6379
+      - LIBRENMS_REDIS_DB=${LIBRENMS_REDIS_DB:-0}
+      - LIBRENMS_REDIS_PASSWORD=${REDIS_PASSWORD:-changeme}
+      - LIBRENMS_SNMP_COMMUNITY=${LIBRENMS_SNMP_COMMUNITY_V2C:-public}
+      - LIBRENMS_POLLER_THREADS=${LIBRENMS_POLLER_THREADS:-16}
+      - LIBRENMS_SERVICE_POLLER=${LIBRENMS_SERVICE_POLLER:-true}
+      - LIBRENMS_SERVICE_DISCOVERY=${LIBRENMS_SERVICE_DISCOVERY:-true}
+      - LIBRENMS_SERVICE_SERVICES=${LIBRENMS_SERVICE_SERVICES:-true}
+      - LIBRENMS_SERVICE_BILLING=${LIBRENMS_SERVICE_BILLING:-true}
+      - LIBRENMS_SERVICE_ALERTS=${LIBRENMS_SERVICE_ALERTS:-true}
+      - LIBRENMS_SERVICE_POLLER_CLUSTER=${LIBRENMS_SERVICE_POLLER_CLUSTER:-true}
+    deploy:
+      resources:
+        limits:
+          cpus: ${LIBRENMS_CPU:-2}
+          memory: ${LIBRENMS_MEM:-2G}
+        reservations:
+          memory: ${LIBRENMS_MEM_RESERVATION:-1G}
+    logging: *default-logging
+    healthcheck:
+      <<: *healthcheck-start
+      test: ["CMD-SHELL", "curl -sf http://localhost:80/health || exit 1"]
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.librenms.entrypoints=websecure
+      - traefik.http.routers.librenms.rule=Host(`librenms.${DOMAIN}`)
+      - traefik.http.routers.librenms.tls=true
+      - traefik.http.routers.librenms.tls.certresolver=letsencrypt
+      - traefik.http.routers.librenms.middlewares=secHeaders@file,ratelimit@file
+      - traefik.http.services.librenms.loadbalancer.server.port=80
+      - traefik.http.routers.librenms.priority=10
+    depends_on:
+      mariadb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  # -------------------------------------------------------------------------
+  # LibreNMS Scheduler - Distributed Polling Dispatcher
+  # -------------------------------------------------------------------------
+  librenms-scheduler:
+    image: librenms/librenms:26.6.0
+    <<: *restart-policy
+    hostname: librenms-scheduler
+    networks:
+      internal_net:
+      database_net:
+    volumes:
+      - librenms_data:/data
+      - librenms_rrd:/opt/librenms/rrd
+      - librenms_logs:/opt/librenms/logs
+      - ./librenms/config/librenms.php:/opt/librenms/config.php:ro
+    environment:
+      - TZ=${TIMEZONE:-UTC}
+      - LIBRENMS_DB_HOST=mariadb
+      - LIBRENMS_DB_PORT=3306
+      - LIBRENMS_DB_NAME=${LIBRENMS_DB_NAME:-librenms}
+      - LIBRENMS_DB_USER=${LIBRENMS_DB_USER:-librenms}
+      - LIBRENMS_DB_PASSWORD=${LIBRENMS_DB_PASSWORD:-changeme}
+      - LIBRENMS_REDIS_HOST=redis
+      - LIBRENMS_REDIS_PORT=6379
+      - LIBRENMS_REDIS_DB=${LIBRENMS_REDIS_DB:-0}
+      - LIBRENMS_REDIS_PASSWORD=${REDIS_PASSWORD:-changeme}
+    deploy:
+      resources:
+        limits:
+          cpus: 1
+          memory: 1G
+    logging: *default-logging
+    command:
+      - /opt/librenms/librenms-service.py
+      - -s
+      - -t=${LIBRENMS_POLLER_THREADS:-16}
+    depends_on:
+      librenms:
+        condition: service_healthy
+
+  # -------------------------------------------------------------------------
+  # LibreNMS Oxidized - Config Backup
+  # -------------------------------------------------------------------------
+  oxidized:
+    image: oxidized/oxidized:latest
+    <<: *restart-policy
+    hostname: oxidized
+    profiles:
+      - full
+    networks:
+      internal_net:
+      database_net:
+    volumes:
+      - librenms_oxidized:/home/oxidized/.config/oxidized
+      - ./librenms/config/oxidized.yaml:/home/oxidized/.config/oxidized/config:ro
+    environment:
+      - TZ=${TIMEZONE:-UTC}
+    deploy:
+      resources:
+        limits:
+          cpus: 0.5
+          memory: 256M
+    logging: *default-logging
+
+  # -------------------------------------------------------------------------
+  # ntopng - Traffic Analysis & Flow Collection
+  # -------------------------------------------------------------------------
+  ntopng:
+    image: ntop/ntopng:latest
+    <<: *restart-policy
+    hostname: ntopng
+    cap_add:
+      - NET_ADMIN
+      - SYS_ADMIN
+    networks:
+      internal_net:
+        aliases:
+          - ntopng
+      database_net:
+      opensearch_net:
+    volumes:
+      - ntopng_data:/var/lib/ntopng
+      - ntopng_logs:/var/log/ntopng
+      - ./ntopng/config/ntopng.conf:/etc/ntopng/ntopng.conf:ro
+    environment:
+      - TZ=${TIMEZONE:-UTC}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-changeme}
+      - OPENSEARCH_HOST=opensearch
+      - OPENSEARCH_PORT=9200
+    deploy:
+      resources:
+        limits:
+          cpus: ${NTOPNG_CPU:-4}
+          memory: ${NTOPNG_MEM:-8G}
+        reservations:
+          memory: ${NTOPNG_MEM_RESERVATION:-4G}
+    logging: *default-logging
+    healthcheck:
+      <<: *healthcheck-start
+      test: ["CMD-SHELL", "curl -sf http://localhost:3000 || exit 1"]
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.ntopng.entrypoints=websecure
+      - traefik.http.routers.ntopng.rule=Host(`ntopng.${DOMAIN}`)
+      - traefik.http.routers.ntopng.tls=true
+      - traefik.http.routers.ntopng.tls.certresolver=letsencrypt
+      - traefik.http.routers.ntopng.middlewares=secHeaders@file,ratelimit@file
+      - traefik.http.services.ntopng.loadbalancer.server.port=3000
+    depends_on:
+      redis:
+        condition: service_healthy
+
+  # -------------------------------------------------------------------------
+  # Prometheus - Metrics Collection & Alert Evaluation
+  # -------------------------------------------------------------------------
+  prometheus:
+    image: prom/prometheus:v3.13.0
+    <<: *restart-policy
+    hostname: prometheus
+    networks:
+      internal_net:
+        aliases:
+          - prometheus
+      monitoring_net:
+    volumes:
+      - prometheus_data:/prometheus
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./prometheus/rules:/etc/prometheus/rules:ro
+      - ./prometheus/targets:/etc/prometheus/targets:ro
+      - ./prometheus/alerts:/etc/prometheus/alerts:ro
+    environment:
+      - TZ=${TIMEZONE:-UTC}
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --storage.tsdb.retention.time=${PROMETHEUS_RETENTION_TIME:-90d}
+      - --storage.tsdb.retention.size=${PROMETHEUS_RETENTION_SIZE:-200GB}
+      - --storage.tsdb.wal-compression
+      - --web.console.templates=/etc/prometheus/consoles
+      - --web.console.libraries=/etc/prometheus/console_libraries
+      - --web.external-url=https://prometheus.${DOMAIN:-noc.example.com}
+      - --web.enable-lifecycle
+      - --web.enable-admin-api
+      - --log.level=${PROMETHEUS_LOG_LEVEL:-info}
+      - --query.timeout=2m
+      - --query.max-concurrency=20
+      - --query.max-samples=50000000
+      - --enable-feature=exemplar-storage,otlp-write-receiver,auto-gomemlimit
+    deploy:
+      resources:
+        limits:
+          cpus: ${PROMETHEUS_CPU:-2}
+          memory: ${PROMETHEUS_MEM:-4G}
+        reservations:
+          memory: ${PROMETHEUS_MEM_RESERVATION:-2G}
+    logging: *default-logging
+    healthcheck:
+      <<: *healthcheck-start
+      test: ["CMD-SHELL", "wget -qO- http://localhost:9090/-/ready || exit 1"]
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.prometheus.entrypoints=websecure
+      - traefik.http.routers.prometheus.rule=Host(`prometheus.${DOMAIN}`)
+      - traefik.http.routers.prometheus.tls=true
+      - traefik.http.routers.prometheus.tls.certresolver=letsencrypt
+      - traefik.http.routers.prometheus.middlewares=secHeaders@file,ratelimit@file
+      - traefik.http.services.prometheus.loadbalancer.server.port=9090
+
+  # -------------------------------------------------------------------------
+  # Alertmanager - Alert Routing & Notification
+  # -------------------------------------------------------------------------
+  alertmanager:
+    image: prom/alertmanager:v0.28.1
+    <<: *restart-policy
+    hostname: alertmanager
+    networks:
+      internal_net:
+        aliases:
+          - alertmanager
+      monitoring_net:
+    volumes:
+      - alertmanager_data:/alertmanager
+      - ./alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+      - ./alertmanager/templates:/etc/alertmanager/templates:ro
+    environment:
+      - TZ=${TIMEZONE:-UTC}
+    command:
+      - --config.file=/etc/alertmanager/alertmanager.yml
+      - --storage.path=/alertmanager
+      - --data.retention=120h
+      - --web.external-url=https://alertmanager.${DOMAIN:-noc.example.com}
+      - --log.level=${ALERTMANAGER_LOG_LEVEL:-info}
+      - --cluster.listen-address=
+    deploy:
+      resources:
+        limits:
+          cpus: ${ALERTMANAGER_CPU:-0.5}
+          memory: ${ALERTMANAGER_MEM:-256M}
+    logging: *default-logging
+    healthcheck:
+      <<: *healthcheck-start
+      test: ["CMD-SHELL", "wget -qO- http://localhost:9093/-/ready || exit 1"]
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.alertmanager.entrypoints=websecure
+      - traefik.http.routers.alertmanager.rule=Host(`alertmanager.${DOMAIN}`)
+      - traefik.http.routers.alertmanager.tls=true
+      - traefik.http.routers.alertmanager.tls.certresolver=letsencrypt
+      - traefik.http.routers.alertmanager.middlewares=secHeaders@file,ratelimit@file
+      - traefik.http.services.alertmanager.loadbalancer.server.port=9093
+
+  # -------------------------------------------------------------------------
+  # Grafana - Dashboards & Visualization
+  # -------------------------------------------------------------------------
+  grafana:
+    image: grafana/grafana:latest
+    <<: *restart-policy
+    hostname: grafana
+    networks:
+      internal_net:
+        aliases:
+          - grafana
+      monitoring_net:
+      opensearch_net:
+      ldap_net:
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - grafana_reports:/var/lib/grafana/reports
+      - ./grafana/datasources:/etc/grafana/provisioning/datasources:ro
+      - ./grafana/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - ./grafana/provisioning/notifiers:/etc/grafana/provisioning/notifiers:ro
+      - ./grafana/provisioning/alerting:/etc/grafana/provisioning/alerting:ro
+      - ./grafana/grafana.ini:/etc/grafana/grafana.ini:ro
+      - ./grafana/dashboards/json:/var/lib/grafana/dashboards:ro
+    environment:
+      - TZ=${TIMEZONE:-UTC}
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-changeme}
+      - GF_INSTALL_PLUGINS=grafana-piechart-panel,grafana-worldmap-panel,natel-discrete-panel,briangann-gauge-panel,briangann-datatable-panel,pr0ps-trackmap-panel,michaeldmoore-multistat-panel,michaeldmoore-annunciator-panel,grafana-polystat-panel,openshift-nsp-network-activity-panel
+      - GF_SERVER_ROOT_URL=https://${GRAFANA_DOMAIN:-grafana.noc.example.com}
+      - GF_AUTH_LDAP_ENABLED=${GRAFANA_LDAP_ENABLED:-true}
+    deploy:
+      resources:
+        limits:
+          cpus: ${GRAFANA_CPU:-1}
+          memory: ${GRAFANA_MEM:-1G}
+    logging: *default-logging
+    healthcheck:
+      <<: *healthcheck-start
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3000/api/health || exit 1"]
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.grafana.entrypoints=websecure
+      - traefik.http.routers.grafana.rule=Host(`grafana.${DOMAIN}`)
+      - traefik.http.routers.grafana.tls=true
+      - traefik.http.routers.grafana.tls.certresolver=letsencrypt
+      - traefik.http.routers.grafana.middlewares=secHeaders@file,ratelimit@file
+      - traefik.http.services.grafana.loadbalancer.server.port=3000
+    depends_on:
+      prometheus:
+        condition: service_healthy
+
+  # -------------------------------------------------------------------------
+  # Loki - Log Aggregation System
+  # -------------------------------------------------------------------------
+  loki:
+    image: grafana/loki:3.8.0
+    <<: *restart-policy
+    hostname: loki
+    networks:
+      internal_net:
+        aliases:
+          - loki
+      monitoring_net:
+    volumes:
+      - loki_data:/loki/data
+      - loki_backup:/loki/backup
+      - ./loki/config/loki.yml:/etc/loki/loki.yml:ro
+    environment:
+      - TZ=${TIMEZONE:-UTC}
+    command:
+      - -config.file=/etc/loki/loki.yml
+      - -log.level=${LOG_LEVEL:-info}
+    deploy:
+      resources:
+        limits:
+          cpus: ${LOKI_CPU:-2}
+          memory: ${LOKI_MEM:-4G}
+        reservations:
+          memory: ${LOKI_MEM_RESERVATION:-2G}
+    logging: *default-logging
+    healthcheck:
+      <<: *healthcheck-start
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3100/ready || exit 1"]
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.loki.entrypoints=websecure
+      - traefik.http.routers.loki.rule=Host(`loki.${DOMAIN}`)
+      - traefik.http.routers.loki.tls=true
+      - traefik.http.routers.loki.tls.certresolver=letsencrypt
+      - traefik.http.routers.loki.middlewares=secHeaders@file,ratelimit@file
+      - traefik.http.services.loki.loadbalancer.server.port=3100
+
+  # -------------------------------------------------------------------------
+  # Promtail - Log Collector (NOC Server)
+  # -------------------------------------------------------------------------
+  promtail:
+    image: grafana/promtail:3.8.0
+    <<: *restart-policy
+    hostname: promtail
+    networks:
+      internal_net:
+      monitoring_net:
+    volumes:
+      - /var/log:/var/log:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - ./loki/config/promtail.yml:/etc/promtail/promtail.yml:ro
+      - ./loki/config/positions:/etc/promtail/positions
+    environment:
+      - TZ=${TIMEZONE:-UTC}
+    command:
+      - -config.file=/etc/promtail/promtail.yml
+      - -log.level=${LOG_LEVEL:-info}
+    deploy:
+      resources:
+        limits:
+          cpus: 0.5
+          memory: 256M
+    logging: *default-logging
+    depends_on:
+      loki:
+        condition: service_healthy
+
+  # -------------------------------------------------------------------------
+  # OpenSearch - Security Events & Analytics Store
+  # -------------------------------------------------------------------------
+  opensearch:
+    image: opensearchproject/opensearch:2.19.5
+    <<: *restart-policy
+    hostname: opensearch
+    networks:
+      opensearch_net:
+        aliases:
+          - opensearch
+      internal_net:
+    volumes:
+      - opensearch_data:/usr/share/opensearch/data
+      - opensearch_backup:/usr/share/opensearch/backup
+      - ./opensearch/config/opensearch.yml:/usr/share/opensearch/config/opensearch.yml:ro
+      - ./opensearch/config/security:/usr/share/opensearch/config/opensearch-security:ro
+    environment:
+      - TZ=${TIMEZONE:-UTC}
+      - cluster.name=${OPENSEARCH_CLUSTER_NAME:-opennoc-opensearch}
+      - node.name=${OPENSEARCH_NODE_NAME:-opennoc-os-1}
+      - OPENSEARCH_INITIAL_ADMIN_PASSWORD=${OPENSEARCH_INITIAL_ADMIN_PASSWORD:-changeme}
+      - DISCOVERY_TYPE=${OPENSEARCH_DISCOVERY_TYPE:-single-node}
+      - DISABLE_SECURITY_PLUGIN=false
+      - DISABLE_INSTALL_DEMO_CONFIG=true
+      - bootstrap.memory_lock=${OPENSEARCH_BOOTSTRAP_MEMORY_LOCK:-true}
+      - JAVA_OPTS=-Xms${OPENSEARCH_JVM_HEAP_SIZE:-4g} -Xmx${OPENSEARCH_JVM_HEAP_SIZE:-4g}
+      - network.host=0.0.0.0
+      - OPENSEARCH_JAVA_OPTS=-Xms${OPENSEARCH_JVM_HEAP_SIZE:-4g} -Xmx${OPENSEARCH_JVM_HEAP_SIZE:-4g}
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
+    deploy:
+      resources:
+        limits:
+          cpus: ${OPENSEARCH_CPU:-4}
+          memory: ${OPENSEARCH_MEM:-8G}
+        reservations:
+          memory: ${OPENSEARCH_MEM_RESERVATION:-4G}
+    logging: *default-logging
+    healthcheck:
+      <<: *healthcheck-start
+      test: ["CMD-SHELL", "curl -sk -u admin:${OPENSEARCH_INITIAL_ADMIN_PASSWORD:-changeme} https://localhost:9200/_cluster/health | grep -q '\"status\":\"green\"' || grep -q '\"status\":\"yellow\"'"]
+
+  # -------------------------------------------------------------------------
+  # OpenSearch Dashboards - Visualization for OpenSearch
+  # -------------------------------------------------------------------------
+  opensearch-dashboards:
+    image: opensearchproject/opensearch-dashboards:2.19.5
+    <<: *restart-policy
+    hostname: opensearch-dashboards
+    networks:
+      opensearch_net:
+      internal_net:
+    volumes:
+      - opensearch_dashboards_data:/usr/share/opensearch-dashboards/data
+      - ./opensearch/config/dashboards.yml:/usr/share/opensearch-dashboards/config/opensearch_dashboards.yml:ro
+    environment:
+      - TZ=${TIMEZONE:-UTC}
+      - OPENSEARCH_HOSTS=https://opensearch:9200
+      - OPENSEARCH_USERNAME=admin
+      - OPENSEARCH_PASSWORD=${OPENSEARCH_INITIAL_ADMIN_PASSWORD:-changeme}
+    deploy:
+      resources:
+        limits:
+          cpus: ${OPENSEARCH_DASHBOARDS_CPU:-1}
+          memory: ${OPENSEARCH_DASHBOARDS_MEM:-512M}
+    logging: *default-logging
+    healthcheck:
+      <<: *healthcheck-start
+      test: ["CMD-SHELL", "curl -sf http://localhost:5601/api/status || exit 1"]
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.opensearch-dashboards.entrypoints=websecure
+      - traefik.http.routers.opensearch-dashboards.rule=Host(`dashboards.${DOMAIN}`)
+      - traefik.http.routers.opensearch-dashboards.tls=true
+      - traefik.http.routers.opensearch-dashboards.tls.certresolver=letsencrypt
+      - traefik.http.routers.opensearch-dashboards.middlewares=secHeaders@file,ratelimit@file
+      - traefik.http.services.opensearch-dashboards.loadbalancer.server.port=5601
+    depends_on:
+      opensearch:
+        condition: service_healthy
+
+  # -------------------------------------------------------------------------
+  # Node Exporter - Host Metrics
+  # -------------------------------------------------------------------------
+  node-exporter:
+    image: prom/node-exporter:v1.11.0
+    <<: *restart-policy
+    hostname: node-exporter
+    networks:
+      monitoring_net:
+        aliases:
+          - node-exporter
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+      # For systemd monitoring
+      - /run/dbus/system_bus_socket:/run/dbus/system_bus_socket:ro
+    command:
+      - --path.procfs=/host/proc
+      - --path.sysfs=/host/sys
+      - --path.rootfs=/rootfs
+      - --collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)
+      - --collector.textfile.directory=/etc/node-exporter
+      - --collector.systemd
+      - --collector.tcpstat
+      - --collector.processes
+      - --web.listen-address=:9100
+      - --log.level=${LOG_LEVEL:-info}
+    pid: host
+    privileged: false
+    cap_add:
+      - SYS_TIME
+    deploy:
+      resources:
+        limits:
+          cpus: ${CADVISOR_CPU:-0.5}
+          memory: ${CADVISOR_MEM:-256M}
+    logging: *default-logging
+    healthcheck:
+      <<: *healthcheck-start
+      test: ["CMD-SHELL", "wget -qO- http://localhost:9100/metrics || exit 1"]
+
+  # -------------------------------------------------------------------------
+  # SNMP Exporter - Network Device Metrics via SNMP
+  # -------------------------------------------------------------------------
+  snmp-exporter:
+    image: prom/snmp-exporter:v0.30.1
+    <<: *restart-policy
+    hostname: snmp-exporter
+    networks:
+      monitoring_net:
+        aliases:
+          - snmp-exporter
+      internal_net:
+    volumes:
+      - ./prometheus/snmp.yml:/etc/snmp_exporter/snmp.yml:ro
+    command:
+      - --config.file=/etc/snmp_exporter/snmp.yml
+      - --web.listen-address=:9116
+      - --log.level=${LOG_LEVEL:-info}
+      - --snmp.walk-parallel=4
+    deploy:
+      resources:
+        limits:
+          cpus: 0.5
+          memory: 256M
+    logging: *default-logging
+    healthcheck:
+      <<: *healthcheck-start
+      test: ["CMD-SHELL", "wget -qO- http://localhost:9116/ || exit 1"]
+
+  # -------------------------------------------------------------------------
+  # Blackbox Exporter - ICMP/TCP/HTTP/Probing
+  # -------------------------------------------------------------------------
+  blackbox-exporter:
+    image: prom/blackbox-exporter:v0.28.0
+    <<: *restart-policy
+    hostname: blackbox-exporter
+    networks:
+      monitoring_net:
+        aliases:
+          - blackbox-exporter
+    volumes:
+      - ./prometheus/blackbox.yml:/etc/blackbox_exporter/blackbox.yml:ro
+    command:
+      - --config.file=/etc/blackbox_exporter/blackbox.yml
+      - --web.listen-address=:9115
+      - --log.level=${LOG_LEVEL:-info}
+    cap_add:
+      - NET_RAW
+      - NET_ADMIN
+    deploy:
+      resources:
+        limits:
+          cpus: 0.5
+          memory: 256M
+    logging: *default-logging
+    healthcheck:
+      <<: *healthcheck-start
+      test: ["CMD-SHELL", "wget -qO- http://localhost:9115/health || exit 1"]
+
+  # -------------------------------------------------------------------------
+  # cAdvisor - Container Resource Monitoring
+  # -------------------------------------------------------------------------
+  cadvisor:
+    image: google/cadvisor:v0.60.1
+    <<: *restart-policy
+    hostname: cadvisor
+    networks:
+      monitoring_net:
+        aliases:
+          - cadvisor
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker:/var/lib/docker:ro
+      - /dev/disk:/dev/disk:ro
+    privileged: false
+    devices:
+      - /dev/kmsg:/dev/kmsg:ro
+    command:
+      - --docker_only=true
+      - --housekeeping_interval=15s
+      - --max_housekeeping_interval=60s
+      - --event_storage_event_limit=10000
+      - --event_storage_age_limit=72h
+      - --store_container_labels=false
+      - --whitelisted_container_labels=io.kubernetes.container.name,io.kubernetes.pod.name,io.kubernetes.namespace
+      - --port=8080
+    deploy:
+      resources:
+        limits:
+          cpus: ${CADVISOR_CPU:-0.5}
+          memory: ${CADVISOR_MEM:-256M}
+    logging: *default-logging
+    healthcheck:
+      <<: *healthcheck-start
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/healthz || exit 1"]

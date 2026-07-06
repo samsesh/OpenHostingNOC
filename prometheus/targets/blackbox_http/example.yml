@@ -1,0 +1,23 @@
+# =============================================================================
+# Blackbox HTTP Targets
+# =============================================================================
+# Targets to probe via HTTP/HTTPS.
+# ---------------------------------------------------------------------------
+
+- targets:
+    - 'https://google.com'
+  labels:
+    target: google
+    type: external
+
+- targets:
+    - 'https://github.com'
+  labels:
+    target: github
+    type: external
+
+- targets:
+    - 'https://your-service.com'
+  labels:
+    target: customer-portal
+    type: internal

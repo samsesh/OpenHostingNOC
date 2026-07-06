@@ -1,0 +1,271 @@
+# =============================================================================
+# Prometheus Configuration - OpenHostingNOC
+# =============================================================================
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  scrape_timeout: 10s
+  external_labels:
+    site: ${HOSTNAME:-opennoc}
+    monitor: opennoc
+
+# Alertmanager configuration
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+            - alertmanager:9093
+      timeout: 10s
+      api_version: v2
+      scheme: http
+
+# Rule files
+rule_files:
+  - /etc/prometheus/rules/*.yml
+  - /etc/prometheus/alerts/*.yml
+
+# Scrape configurations
+scrape_configs:
+
+  # Prometheus self-monitoring
+  - job_name: prometheus
+    scrape_interval: 30s
+    static_configs:
+      - targets:
+          - localhost:9090
+        labels:
+          service: prometheus
+          component: monitoring
+
+  # Alertmanager
+  - job_name: alertmanager
+    scrape_interval: 30s
+    static_configs:
+      - targets:
+          - alertmanager:9093
+        labels:
+          service: alertmanager
+          component: monitoring
+
+  # Grafana
+  - job_name: grafana
+    scrape_interval: 30s
+    metrics_path: /metrics
+    static_configs:
+      - targets:
+          - grafana:3000
+        labels:
+          service: grafana
+          component: monitoring
+
+  # Node Exporter (NOC server)
+  - job_name: node
+    scrape_interval: 15s
+    metrics_path: /metrics
+    static_configs:
+      - targets:
+          - node-exporter:9100
+        labels:
+          host: ${HOSTNAME:-opennoc}
+          service: node-exporter
+          component: infrastructure
+
+    # External Node Exporters (add targets via file discovery)
+  - job_name: node_external
+    scrape_interval: 30s
+    metrics_path: /metrics
+    file_sd_configs:
+      - files:
+          - /etc/prometheus/targets/nodes/*.yml
+        refresh_interval: 5m
+    relabel_configs:
+      - source_labels: [__address__]
+        regex: (.*):.*
+        target_label: instance
+        replacement: ${1}
+      - source_labels: [host]
+        target_label: instance
+
+  # SNMP Exporter
+  - job_name: snmp
+    scrape_interval: 60s
+    scrape_timeout: 30s
+    metrics_path: /snmp
+    params:
+      module: [if_mib]
+    file_sd_configs:
+      - files:
+          - /etc/prometheus/targets/snmp/*.yml
+        refresh_interval: 5m
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: snmp-exporter:9116
+
+  # Blackbox Exporter - ICMP
+  - job_name: blackbox-icmp
+    scrape_interval: 30s
+    metrics_path: /probe
+    params:
+      module: [icmp]
+    file_sd_configs:
+      - files:
+          - /etc/prometheus/targets/blackbox_icmp/*.yml
+        refresh_interval: 5m
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: blackbox-exporter:9115
+
+  # Blackbox Exporter - HTTP
+  - job_name: blackbox-http
+    scrape_interval: 60s
+    metrics_path: /probe
+    params:
+      module: [http_2xx]
+    file_sd_configs:
+      - files:
+          - /etc/prometheus/targets/blackbox_http/*.yml
+        refresh_interval: 5m
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: blackbox-exporter:9115
+
+  # Blackbox Exporter - TCP
+  - job_name: blackbox-tcp
+    scrape_interval: 60s
+    metrics_path: /probe
+    params:
+      module: [tcp_connect]
+    file_sd_configs:
+      - files:
+          - /etc/prometheus/targets/blackbox_tcp/*.yml
+        refresh_interval: 5m
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: blackbox-exporter:9115
+
+  # Blackbox Exporter - DNS
+  - job_name: blackbox-dns
+    scrape_interval: 60s
+    metrics_path: /probe
+    params:
+      module: [dns_udp]
+    file_sd_configs:
+      - files:
+          - /etc/prometheus/targets/blackbox_dns/*.yml
+        refresh_interval: 5m
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: blackbox-exporter:9115
+
+  # cAdvisor (container monitoring)
+  - job_name: cadvisor
+    scrape_interval: 15s
+    metrics_path: /metrics
+    static_configs:
+      - targets:
+          - cadvisor:8080
+        labels:
+          service: cadvisor
+          component: containers
+
+  # Traefik metrics
+  - job_name: traefik
+    scrape_interval: 30s
+    metrics_path: /metrics
+    static_configs:
+      - targets:
+          - traefik:8080
+        labels:
+          service: traefik
+          component: proxy
+
+  # Loki metrics
+  - job_name: loki
+    scrape_interval: 30s
+    metrics_path: /metrics
+    static_configs:
+      - targets:
+          - loki:3100
+        labels:
+          service: loki
+          component: logging
+
+  # OpenSearch metrics
+  - job_name: opensearch
+    scrape_interval: 60s
+    metrics_path: /_prometheus/metrics
+    scheme: https
+    basic_auth:
+      username: admin
+      password: ${OPENSEARCH_INITIAL_ADMIN_PASSWORD:-changeme}
+    tls_config:
+      insecure_skip_verify: true
+    static_configs:
+      - targets:
+          - opensearch:9200
+        labels:
+          service: opensearch
+          component: storage
+
+  # MariaDB metrics (via mysqld_exporter)
+  - job_name: mariadb
+    scrape_interval: 60s
+    static_configs:
+      - targets:
+          - mariadb:9104
+        labels:
+          service: mariadb
+          component: database
+
+  # Redis metrics (via redis_exporter)
+  - job_name: redis
+    scrape_interval: 60s
+    static_configs:
+      - targets:
+          - redis:9121
+        labels:
+          service: redis
+          component: cache
+
+  # LibreNMS metrics
+  - job_name: librenms
+    scrape_interval: 60s
+    metrics_path: /metrics
+    static_configs:
+      - targets:
+          - librenms:80
+        labels:
+          service: librenms
+          component: monitoring
+
+  # ntopng metrics
+  - job_name: ntopng
+    scrape_interval: 60s
+    metrics_path: /lua/pro/prometheus.lua
+    static_configs:
+      - targets:
+          - ntopng:3000
+        labels:
+          service: ntopng
+          component: traffic

@@ -1,0 +1,81 @@
+# =============================================================================
+# Container / Docker Alert Rules
+# =============================================================================
+
+groups:
+  - name: containers
+    interval: 30s
+    rules:
+
+      # ---- Container Failures ----
+      - alert: ContainerRestarting
+        expr: rate(container_last_seen{name!~".*pause.*"}[5m]) == 0 or time() - container_last_seen{name!~".*pause.*"} > 60
+        for: 1m
+        labels:
+          severity: critical
+          category: infrastructure
+        annotations:
+          summary: "Container {{ $labels.name }} is restarting"
+          description: "Container {{ $labels.name }} on {{ $labels.instance }} has restarted {{ $value }} times."
+
+      - alert: ContainerCPUHigh
+        expr: (rate(container_cpu_usage_seconds_total{name!~".*pause.*"}[5m]) * 100) > 90
+        for: 10m
+        labels:
+          severity: warning
+          category: infrastructure
+        annotations:
+          summary: "Container {{ $labels.name }} CPU high"
+          description: "Container {{ $labels.name }} is using {{ $value | humanizePercentage }} CPU."
+
+      - alert: ContainerMemoryHigh
+        expr: container_memory_usage_bytes{name!~".*pause.*"} / container_spec_memory_limit_bytes{name!~".*pause.*"} * 100 > 90
+        for: 10m
+        labels:
+          severity: warning
+          category: infrastructure
+        annotations:
+          summary: "Container {{ $labels.name }} memory high"
+          description: "Container {{ $labels.name }} memory usage is at {{ $value | humanizePercentage }}."
+
+      - alert: ContainerOOM
+        expr: (container_memory_usage_bytes{name!~".*pause.*"} / container_spec_memory_limit_bytes{name!~".*pause.*"} * 100 > 95) and (container_spec_memory_limit_bytes{name!~".*pause.*"} > 0)
+        for: 2m
+        labels:
+          severity: critical
+          category: infrastructure
+        annotations:
+          summary: "Container {{ $labels.name }} near OOM"
+          description: "Container {{ $labels.name }} memory usage at {{ $value | humanizePercentage }} of limit."
+
+      # ---- Service Status (via systemd) ----
+      - alert: ServiceDown
+        expr: node_systemd_unit_state{state="active"} == 0
+        for: 2m
+        labels:
+          severity: critical
+          category: infrastructure
+        annotations:
+          summary: "Service {{ $labels.name }} is down on {{ $labels.instance }}"
+          description: "Systemd unit {{ $labels.name }} is not active on {{ $labels.instance }}."
+
+      - alert: DockerDaemonDown
+        expr: time() - docker_last_seen > 60
+        for: 1m
+        labels:
+          severity: critical
+          category: infrastructure
+        annotations:
+          summary: "Docker daemon unreachable on {{ $labels.instance }}"
+          description: "Docker daemon on {{ $labels.instance }} has not been seen for 60 seconds."
+
+      # ---- cAdvisor ----
+      - alert: cAdvisorDown
+        expr: up{job="cadvisor"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          category: infrastructure
+        annotations:
+          summary: "cAdvisor is down"
+          description: "cAdvisor container metrics collector is unreachable."

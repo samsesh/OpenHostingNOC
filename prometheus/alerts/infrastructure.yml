@@ -1,0 +1,210 @@
+# =============================================================================
+# Infrastructure Alert Rules
+# =============================================================================
+
+groups:
+  - name: infrastructure
+    interval: 30s
+    rules:
+
+      # ---- Host Availability ----
+      - alert: HostDown
+        expr: up{job=~"node|node_external|snmp"} == 0
+        for: 2m
+        labels:
+          severity: critical
+          category: infrastructure
+        annotations:
+          summary: "Host {{ $labels.instance }} is down"
+          description: "{{ $labels.instance }} has been unreachable for more than 2 minutes."
+          value: "{{ $value }}"
+
+      - alert: HostRestarted
+        expr: time() - node_boot_time_seconds{job="node"} < 300
+        labels:
+          severity: warning
+          category: infrastructure
+        annotations:
+          summary: "Host {{ $labels.instance }} has been restarted"
+          description: "{{ $labels.instance }} was rebooted less than 5 minutes ago."
+
+      # ---- CPU ----
+      - alert: HighCPUUsage
+        expr: 100 - (avg by(instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 90
+        for: 10m
+        labels:
+          severity: critical
+          category: infrastructure
+        annotations:
+          summary: "High CPU usage on {{ $labels.instance }}"
+          description: "{{ $labels.instance }} CPU usage is at {{ $value | humanizePercentage }} for 10 minutes."
+          value: "{{ $value | humanizePercentage }}"
+
+      - alert: ModerateCPUUsage
+        expr: 100 - (avg by(instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 80
+        for: 20m
+        labels:
+          severity: warning
+          category: infrastructure
+        annotations:
+          summary: "Moderate CPU usage on {{ $labels.instance }}"
+          description: "{{ $labels.instance }} CPU usage is at {{ $value | humanizePercentage }} for 20 minutes."
+
+      # ---- Memory ----
+      - alert: HighMemoryUsage
+        expr: (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100 > 90
+        for: 10m
+        labels:
+          severity: critical
+          category: infrastructure
+        annotations:
+          summary: "High memory usage on {{ $labels.instance }}"
+          description: "{{ $labels.instance }} memory usage is at {{ $value | humanizePercentage }} for 10 minutes."
+          value: "{{ $value | humanizePercentage }}"
+
+      - alert: ModerateMemoryUsage
+        expr: (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100 > 80
+        for: 20m
+        labels:
+          severity: warning
+          category: infrastructure
+        annotations:
+          summary: "Moderate memory usage on {{ $labels.instance }}"
+          description: "{{ $labels.instance }} memory usage is at {{ $value | humanizePercentage }} for 20 minutes."
+
+      # ---- Disk ----
+      - alert: DiskSpaceCritical
+        expr: (1 - (node_filesystem_avail_bytes{fstype!="tmpfs",mountpoint!="/boot"} / node_filesystem_size_bytes{fstype!="tmpfs",mountpoint!="/boot"})) * 100 > 95
+        for: 5m
+        labels:
+          severity: critical
+          category: infrastructure
+        annotations:
+          summary: "Disk space critical on {{ $labels.instance }}"
+          description: "{{ $labels.instance }} {{ $labels.mountpoint }} is {{ $value | humanizePercentage }} full."
+          value: "{{ $value | humanizePercentage }}"
+
+      - alert: DiskSpaceWarning
+        expr: (1 - (node_filesystem_avail_bytes{fstype!="tmpfs",mountpoint!="/boot"} / node_filesystem_size_bytes{fstype!="tmpfs",mountpoint!="/boot"})) * 100 > 85
+        for: 10m
+        labels:
+          severity: warning
+          category: infrastructure
+        annotations:
+          summary: "Disk space warning on {{ $labels.instance }}"
+          description: "{{ $labels.instance }} {{ $labels.mountpoint }} is {{ $value | humanizePercentage }} full."
+
+      - alert: DiskSpacePredictFull
+        expr: predict_linear(node_filesystem_avail_bytes{fstype!="tmpfs",mountpoint!="/boot"}[1h], 24*3600) < 0
+        for: 30m
+        labels:
+          severity: warning
+          category: infrastructure
+        annotations:
+          summary: "Disk will be full in 24 hours on {{ $labels.instance }}"
+          description: "{{ $labels.instance }} {{ $labels.mountpoint }} will be full within 24 hours at current rate."
+
+      # ---- Disk I/O ----
+      - alert: HighDiskIO
+        expr: rate(node_disk_io_time_seconds_total[5m]) > 0.9
+        for: 10m
+        labels:
+          severity: warning
+          category: infrastructure
+        annotations:
+          summary: "High disk I/O on {{ $labels.instance }}"
+          description: "{{ $labels.instance }} disk I/O is at {{ $value | humanizePercentage }} for 10 minutes."
+
+      # ---- Network ----
+      - alert: NetworkInterfaceDown
+        expr: node_network_up{device!~"lo|docker*|veth*|br-*"} == 0
+        for: 2m
+        labels:
+          severity: critical
+          category: network
+        annotations:
+          summary: "Network interface {{ $labels.device }} is down on {{ $labels.instance }}"
+          description: "{{ $labels.instance }} interface {{ $labels.device }} is down."
+
+      - alert: HighNetworkBandwidth
+        expr: rate(node_network_receive_bytes_total[5m]) * 8 > 1e9
+        for: 5m
+        labels:
+          severity: warning
+          category: network
+        annotations:
+          summary: "High network bandwidth on {{ $labels.instance }}"
+          description: "{{ $labels.instance }} {{ $labels.device }} is using > 1 Gbps receive bandwidth."
+
+      - alert: InterfaceErrors
+        expr: rate(node_network_receive_errors_total[5m]) / rate(node_network_receive_packets_total[5m]) * 100 > 1
+        for: 5m
+        labels:
+          severity: warning
+          category: network
+        annotations:
+          summary: "Interface errors on {{ $labels.instance }} {{ $labels.device }}"
+          description: "{{ $labels.instance }} {{ $labels.device }} has {{ $value | humanizePercentage }} receive errors."
+
+      # ---- Temperature ----
+      - alert: HighTemperature
+        expr: node_hwmon_temp_celsius > 80
+        for: 5m
+        labels:
+          severity: critical
+          category: infrastructure
+        annotations:
+          summary: "High temperature on {{ $labels.instance }}"
+          description: "{{ $labels.instance }} temperature is {{ $value }}°C."
+
+      - alert: HighTemperatureWarning
+        expr: node_hwmon_temp_celsius > 70
+        for: 10m
+        labels:
+          severity: warning
+          category: infrastructure
+        annotations:
+          summary: "Temperature warning on {{ $labels.instance }}"
+          description: "{{ $labels.instance }} temperature is {{ $value }}°C."
+
+      # ---- System Load ----
+      - alert: HighLoadAverage
+        expr: node_load15 / count(node_cpu_seconds_total{mode="user"}) by(instance) > 0.8
+        for: 15m
+        labels:
+          severity: warning
+          category: infrastructure
+        annotations:
+          summary: "High load average on {{ $labels.instance }}"
+          description: "{{ $labels.instance }} load average is {{ $value }} for 15 minutes."
+
+      - alert: CriticalLoadAverage
+        expr: node_load15 / count(node_cpu_seconds_total{mode="user"}) by(instance) > 1.5
+        for: 10m
+        labels:
+          severity: critical
+          category: infrastructure
+        annotations:
+          summary: "Critical load average on {{ $labels.instance }}"
+          description: "{{ $labels.instance }} load average is {{ $value }} for 10 minutes."
+
+      # ---- Process/File Handle ----
+      - alert: TooManyProcesses
+        expr: node_processes_threads > 10000
+        for: 10m
+        labels:
+          severity: warning
+          category: infrastructure
+        annotations:
+          summary: "Too many processes on {{ $labels.instance }}"
+          description: "{{ $labels.instance }} has {{ $value }} threads."
+
+      - alert: OOMKillDetected
+        expr: increase(node_vmstat_oom_kill[5m]) > 0
+        for: 1m
+        labels:
+          severity: critical
+          category: infrastructure
+        annotations:
+          summary: "OOM kill detected on {{ $labels.instance }}"
+          description: "OOM killer was invoked on {{ $labels.instance }}."

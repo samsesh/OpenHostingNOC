@@ -1,0 +1,63 @@
+# =============================================================================
+# Oxidized Configuration - LibreNMS Config Backup
+# =============================================================================
+# This file is mounted into the Oxidized container.
+
+username: librenms
+password: ""
+model: junos
+interval: 3600
+log: /home/oxidized/.config/oxidized/log
+debug: false
+threads: 30
+timeout: 30
+retries: 3
+prompt: !ruby/regexp /^([\w.@-]+[#>]\s?)$/
+rest: 0.0.0.0:8888
+next_adds_job: false
+vars:
+  enable: S3cre7!
+groups:
+  mikrotik:
+    model: routeros
+    username: librenms
+    password: ""
+  cisco:
+    model: ios
+    username: librenms
+    password: ""
+    vars:
+      enable: S3cre7!
+  juniper:
+    model: junos
+    username: librenms
+    password: ""
+  arista:
+    model: eos
+    username: librenms
+    password: ""
+  fortinet:
+    model: fortios
+    username: librenms
+    password: ""
+  pfsense:
+    model: pfSense
+    username: librenms
+    password: ""
+source:
+  default: csv
+  csv:
+    file: /home/oxidized/.config/oxidized/router.db
+    delimiter: !ruby/regexp /:/
+    map:
+      name: 0
+      model: 1
+      group: 2
+    gpg: false
+
+output:
+  default: git
+  git:
+    user: librenms
+    email: librenms@noc.example.com
+    repo: "/home/oxidized/.config/oxidized/configs.git"

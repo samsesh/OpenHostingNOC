@@ -1,0 +1,40 @@
+# =============================================================================
+# Grafana LDAP Authentication Configuration
+# =============================================================================
+
+[[servers]]
+host = "${GRAFANA_LDAP_HOST}"
+port = ${GRAFANA_LDAP_PORT:-389}
+
+use_ssl = ${LDAP_TLS:-false}
+start_tls = false
+ssl_skip_verify = false
+
+bind_dn = "${GRAFANA_LDAP_BIND_DN}"
+bind_password = '${GRAFANA_LDAP_BIND_PASSWORD}'
+
+search_filter = "(uid=%s)"
+search_base_dns = ["${GRAFANA_LDAP_BASE_DN}"]
+
+group_search_filter = "(memberUid=%s)"
+group_search_base_dns = ["${GRAFANA_LDAP_BASE_DN}"]
+group_search_filter_user_attribute = "uid"
+
+[servers.attributes]
+name = "givenName"
+surname = "sn"
+username = "uid"
+member_of = "memberOf"
+email = "mail"
+
+[[servers.group_mappings]]
+group_dn = "${LDAP_ADMIN_GROUP}"
+org_role = "Admin"
+
+[[servers.group_mappings]]
+group_dn = "cn=noc-editor,ou=groups,${LDAP_BASE_DN}"
+org_role = "Editor"
+
+[[servers.group_mappings]]
+group_dn = "cn=noc-viewer,ou=groups,${LDAP_BASE_DN}"
+org_role = "Viewer"

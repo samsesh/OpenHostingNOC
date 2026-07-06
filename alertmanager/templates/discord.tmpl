@@ -1,0 +1,25 @@
+{{- define "discord-message" -}}
+**🔴 CRITICAL ALERT**
+**Alert:** {{ .GroupLabels.alertname }}
+**Severity:** {{ .CommonLabels.severity }}
+**Instance:** {{ .CommonLabels.instance }}
+**Summary:** {{ .CommonAnnotations.summary }}
+**Description:** {{ .CommonAnnotations.description }}
+**Active since:** {{ .StartsAt.Format "2006-01-02 15:04:05 UTC" }}
+{{- if gt (len .Alerts.Firing) 1 }}
+**Total alerts:** {{ len .Alerts.Firing }}
+{{- end }}
+[View in Alertmanager]({{ .ExternalURL }})
+{{- end -}}
+
+{{- define "discord-emergency" -}}
+@everyone
+**🚨🚨🚨 EMERGENCY ALERT 🚨🚨🚨**
+**Alert:** {{ .GroupLabels.alertname }}
+**Instance:** {{ .CommonLabels.instance }}
+**Summary:** {{ .CommonAnnotations.summary }}
+**Description:** {{ .CommonAnnotations.description }}
+**Current value:** {{ .CommonAnnotations.value }}
+**Active since:** {{ .StartsAt.Format "2006-01-02 15:04:05 UTC" }}
+[View in Alertmanager]({{ .ExternalURL }})
+{{- end -}}

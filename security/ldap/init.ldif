@@ -1,0 +1,74 @@
+# =============================================================================
+# OpenLDAP Bootstrap Configuration
+# =============================================================================
+# This LDIF file is loaded when the OpenLDAP container first starts.
+# It creates the base organizational structure for NOC users and groups.
+# =============================================================================
+
+dn: ou=users,dc=noc,dc=example,dc=com
+objectClass: organizationalUnit
+objectClass: top
+ou: users
+
+dn: ou=groups,dc=noc,dc=example,dc=com
+objectClass: organizationalUnit
+objectClass: top
+ou: groups
+
+# Admin Group (Grafana Admin role)
+dn: cn=noc-admin,ou=groups,dc=noc,dc=example,dc=com
+objectClass: posixGroup
+objectClass: top
+cn: noc-admin
+gidNumber: 5000
+description: NOC Administrators - full access
+
+# Editor Group (Grafana Editor role)
+dn: cn=noc-editor,ou=groups,dc=noc,dc=example,dc=com
+objectClass: posixGroup
+objectClass: top
+cn: noc-editor
+gidNumber: 5001
+description: NOC Editors - can create and modify dashboards
+
+# Viewer Group (Grafana Viewer role)
+dn: cn=noc-viewer,ou=groups,dc=noc,dc=example,dc=com
+objectClass: posixGroup
+objectClass: top
+cn: noc-viewer
+gidNumber: 5002
+description: NOC Viewers - read-only access
+
+# Admin User
+dn: uid=admin,ou=users,dc=noc,dc=example,dc=com
+objectClass: inetOrgPerson
+objectClass: posixAccount
+objectClass: shadowAccount
+objectClass: top
+cn: Admin User
+sn: Admin
+uid: admin
+uidNumber: 10000
+gidNumber: 5000
+homeDirectory: /home/admin
+loginShell: /bin/bash
+mail: admin@noc.example.com
+userPassword: {SSHA}changeme_admin_password_hash
+description: NOC Administrator
+
+# Operator User
+dn: uid=operator,ou=users,dc=noc,dc=example,dc=com
+objectClass: inetOrgPerson
+objectClass: posixAccount
+objectClass: shadowAccount
+objectClass: top
+cn: Operator User
+sn: Operator
+uid: operator
+uidNumber: 10001
+gidNumber: 5001
+homeDirectory: /home/operator
+loginShell: /bin/bash
+mail: operator@noc.example.com
+userPassword: {SSHA}changeme_operator_password_hash
+description: NOC Operator

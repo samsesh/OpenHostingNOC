@@ -1,0 +1,252 @@
+# =============================================================================
+# Alertmanager Configuration - OpenHostingNOC
+# =============================================================================
+
+route:
+  receiver: 'default'
+  group_by: ['alertname', 'severity', 'instance', 'service']
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 4h
+
+  routes:
+    # ---- Emergency: Immediate notification ----
+    - receiver: 'emergency'
+      match:
+        severity: 'emergency'
+      repeat_interval: 15m
+      group_wait: 0s
+      continue: true
+
+    # ---- Critical: Notify all channels ----
+    - receiver: 'critical'
+      match:
+        severity: 'critical'
+      repeat_interval: 1h
+      group_wait: 10s
+      continue: true
+
+    # ---- Warning: Standard notification ----
+    - receiver: 'warning'
+      match:
+        severity: 'warning'
+      repeat_interval: 4h
+      group_wait: 30s
+      continue: true
+
+    # ---- Security events ----
+    - receiver: 'security'
+      match:
+        category: 'security'
+      repeat_interval: 15m
+      group_wait: 0s
+
+    # ---- Network events ----
+    - receiver: 'network'
+      match:
+        category: 'network'
+      repeat_interval: 5m
+      group_wait: 10s
+
+    # ---- Infrastructure ----
+    - receiver: 'infrastructure'
+      match:
+        category: 'infrastructure'
+      repeat_interval: 30m
+      group_wait: 30s
+
+    # ---- Maintenance windows silence ----
+    - receiver: 'null'
+      matchers:
+        - maintenance =~ true
+      continue: false
+
+receivers:
+  # ---- Null receiver (silence) ----
+  - name: 'null'
+
+  # ---- Default: Warning ----
+  - name: 'default'
+    send_resolved: true
+    telegram_configs: []
+    email_configs: []
+
+  # ---- Warning Receiver ----
+  - name: 'warning'
+    send_resolved: true
+    telegram_configs:
+      - bot_token: ${TELEGRAM_BOT_TOKEN}
+        chat_id: ${TELEGRAM_CHAT_ID_WARNING}
+        parse_mode: 'HTML'
+        message: '{{ template "telegram-warning" . }}'
+        send_resolved: true
+    email_configs:
+      - to: ${SMTP_TO}
+        from: ${SMTP_FROM}
+        smarthost: ${SMTP_SMARTHOST}
+        auth_username: ${SMTP_USERNAME}
+        auth_password: ${SMTP_PASSWORD}
+        headers:
+          subject: '{{ template "email.subject" . }}'
+        html: '{{ template "email.html" . }}'
+        send_resolved: true
+
+  # ---- Critical Receiver ----
+  - name: 'critical'
+    send_resolved: true
+    telegram_configs:
+      - bot_token: ${TELEGRAM_BOT_TOKEN}
+        chat_id: ${TELEGRAM_CHAT_ID_CRITICAL}
+        parse_mode: 'HTML'
+        message: '{{ template "telegram-critical" . }}'
+        send_resolved: true
+    discord_configs:
+      - webhook_url: ${DISCORD_WEBHOOK_URL}
+        message: '{{ template "discord-message" . }}'
+        send_resolved: true
+    slack_configs:
+      - api_url: ${SLACK_API_URL}
+        channel: '#ops-alerts'
+        username: 'OpenHostingNOC'
+        icon_emoji: ':critical:'
+        title: '{{ template "slack.title" . }}'
+        text: '{{ template "slack.text" . }}'
+        send_resolved: true
+    email_configs:
+      - to: ${SMTP_TO}
+        from: ${SMTP_FROM}
+        smarthost: ${SMTP_SMARTHOST}
+        auth_username: ${SMTP_USERNAME}
+        auth_password: ${SMTP_PASSWORD}
+        headers:
+          subject: '{{ template "email.subject.critical" . }}'
+        html: '{{ template "email.html.critical" . }}'
+        send_resolved: true
+    webhook_configs:
+      - url: ${WEBHOOK_URL}
+        send_resolved: true
+
+  # ---- Emergency Receiver ----
+  - name: 'emergency'
+    send_resolved: true
+    telegram_configs:
+      - bot_token: ${TELEGRAM_BOT_TOKEN}
+        chat_id: ${TELEGRAM_CHAT_ID_EMERGENCY}
+        parse_mode: 'HTML'
+        message: '{{ template "telegram-emergency" . }}'
+        send_resolved: true
+    discord_configs:
+      - webhook_url: ${DISCORD_WEBHOOK_URL}
+        message: '{{ template "discord-emergency" . }}'
+        send_resolved: true
+    slack_configs:
+      - api_url: ${SLACK_API_URL}
+        channel: '#emergency'
+        username: 'OpenHostingNOC'
+        icon_emoji: ':red_circle:'
+        title: '{{ template "slack.title.emergency" . }}'
+        text: '{{ template "slack.text.emergency" . }}'
+        send_resolved: true
+    email_configs:
+      - to: ${SMTP_TO}
+        from: ${SMTP_FROM}
+        smarthost: ${SMTP_SMARTHOST}
+        auth_username: ${SMTP_USERNAME}
+        auth_password: ${SMTP_PASSWORD}
+        headers:
+          subject: '🚨 {{ template "email.subject.emergency" . }}'
+        html: '{{ template "email.html.emergency" . }}'
+        send_resolved: true
+        headers:
+          X-Priority: '1'
+          Importance: 'high'
+    webhook_configs:
+      - url: ${WEBHOOK_URL}
+        send_resolved: true
+      - url: https://api.pagerduty.com/v2/change_events
+        send_resolved: true
+        http_config:
+          headers:
+            Authorization: 'Token token=${PAGERDUTY_ROUTING_KEY}'
+
+  # ---- Security Receiver ----
+  - name: 'security'
+    send_resolved: true
+    telegram_configs:
+      - bot_token: ${TELEGRAM_BOT_TOKEN}
+        chat_id: ${TELEGRAM_CHAT_ID_CRITICAL}
+        parse_mode: 'HTML'
+        message: '{{ template "telegram-security" . }}'
+        send_resolved: true
+    email_configs:
+      - to: ${SMTP_TO}
+        from: ${SMTP_FROM}
+        smarthost: ${SMTP_SMARTHOST}
+        auth_username: ${SMTP_USERNAME}
+        auth_password: ${SMTP_PASSWORD}
+        headers:
+          subject: '🔒 Security Alert: {{ template "email.subject" . }}'
+        html: '{{ template "email.html" . }}'
+        send_resolved: true
+
+  # ---- Network Receiver ----
+  - name: 'network'
+    send_resolved: true
+    telegram_configs:
+      - bot_token: ${TELEGRAM_BOT_TOKEN}
+        chat_id: ${TELEGRAM_CHAT_ID_CRITICAL}
+        parse_mode: 'HTML'
+        message: '{{ template "telegram-network" . }}'
+        send_resolved: true
+
+  # ---- Infrastructure Receiver ----
+  - name: 'infrastructure'
+    send_resolved: true
+    telegram_configs:
+      - bot_token: ${TELEGRAM_BOT_TOKEN}
+        chat_id: ${TELEGRAM_CHAT_ID_WARNING}
+        parse_mode: 'HTML'
+        message: '{{ template "telegram-infra" . }}'
+        send_resolved: true
+
+# ---- Inhibition Rules ----
+inhibit_rules:
+  # If emergency is firing, suppress all lower severity
+  - source_match:
+      severity: 'emergency'
+    target_match:
+      severity: 'warning'
+    equal: ['alertname', 'instance']
+
+  - source_match:
+      severity: 'emergency'
+    target_match:
+      severity: 'critical'
+    equal: ['alertname', 'instance']
+
+  # If host is down, suppress all related alerts
+  - source_match:
+      alertname: 'HostDown'
+    target_match_re:
+      alertname: '(CPU|Memory|Disk|Network).*'
+    equal: ['instance']
+
+  # If network is unreachable, suppress host-level alerts
+  - source_match:
+      alertname: 'NetworkUnreachable'
+    target_match:
+      severity: 'warning'
+    equal: ['instance']
+
+# ---- Time-based silences (maintenance windows) ----
+time_intervals:
+  - name: 'maintenance-windows'
+    time_intervals:
+      - weekdays: ['saturday', 'sunday']
+        times:
+          - start_time: '00:00'
+            end_time: '23:59'
+      - weekdays: ['monday:thursday']
+        times:
+          - start_time: '22:00'
+            end_time: '06:00'

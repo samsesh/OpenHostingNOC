@@ -1,0 +1,196 @@
+# =============================================================================
+# Suricata Configuration - OpenHostingNOC
+# =============================================================================
+# Template - INTERFACE_PLACEHOLDER and HOME_NET_PLACEHOLDER are replaced
+# by the install script.
+# =============================================================================
+
+%YAML 1.1
+---
+
+# Number of packets to process simultaneously
+max-pending-packets: 8192
+
+# Run mode
+runmode: workers
+default-packet-size: 1514
+
+# Interface
+af-packet:
+  - interface: INTERFACE_PLACEHOLDER
+    cluster-id: 99
+    cluster-type: cluster_flow
+    defrag: yes
+    use-mmap: yes
+    ring-size: 2048
+    buffer-size: 64535
+    tpacket-v3: yes
+
+# Home network
+vars:
+  address-groups:
+    HOME_NET: "[HOME_NET_PLACEHOLDER]"
+    EXTERNAL_NET: "!$HOME_NET"
+    HTTP_SERVERS: "$HOME_NET"
+    SMTP_SERVERS: "$HOME_NET"
+    SQL_SERVERS: "$HOME_NET"
+    DNS_SERVERS: "$HOME_NET"
+    TELNET_SERVERS: "$HOME_NET"
+    AIM_SERVERS: "$HOME_NET"
+    DC_SERVERS: "$HOME_NET"
+    DNP3_SERVER: "$HOME_NET"
+    DNP3_CLIENT: "$HOME_NET"
+    MODBUS_CLIENT: "$HOME_NET"
+    MODBUS_SERVER: "$HOME_NET"
+    ENIP_CLIENT: "$HOME_NET"
+    ENIP_SERVER: "$HOME_NET"
+
+  port-groups:
+    HTTP_PORTS: "80"
+    SHELLCODE_PORTS: "!80"
+    ORACLE_PORTS: 1521
+    SSH_PORTS: 22
+    DNP3_PORTS: 20000
+    MODBUS_PORTS: 502
+    ENIP_PORTS: 44818
+
+# Logging
+outputs:
+  - eve-log:
+      enabled: yes
+      filetype: regular
+      filename: eve.json
+      types:
+        - alert:
+            enabled: yes
+            payload: yes
+            payload-printable: yes
+            packet: yes
+            http: yes
+            tls: yes
+            ssh: yes
+            xff: yes
+            app-layer: yes
+        - http:
+            enabled: no
+        - dns:
+            enabled: yes
+        - tls:
+            enabled: yes
+        - files:
+            enabled: no
+        - drop:
+            enabled: yes
+        - smtp:
+            enabled: no
+        - flow:
+            enabled: yes
+        - netflow:
+            enabled: yes
+
+  - stats:
+      enabled: yes
+      filename: stats.log
+      interval: 60
+
+  - syslog:
+      enabled: yes
+      facility: local5
+      level: Info
+
+# App-layer protocols
+app-layer:
+  protocols:
+    tls:
+      enabled: yes
+      detection-ports:
+        ports: [443, 465, 993, 995, 8443, 8883]
+    dns:
+      enabled: yes
+      detection-ports:
+        ports: [53]
+    http:
+      enabled: yes
+      detection-ports:
+        ports: [80, 8080, 8000, 8888]
+    smtp:
+      enabled: yes
+      detection-ports:
+        ports: [25, 465, 587]
+    ssh:
+      enabled: yes
+    ftp:
+      enabled: yes
+    smb:
+      enabled: yes
+
+# Flow settings
+flow:
+  memcap: 512mb
+  hash-size: 131072
+  trackers:
+    tcp: 65536
+    udp: 65536
+    icmp: 65536
+
+# Defragmentation
+defrag:
+  memcap: 256mb
+  hash-size: 65536
+  trackers: 65536
+  max-frags: 65536
+  prealloc: yes
+  timeout: 60
+
+# TCP stream settings
+stream:
+  memcap: 512mb
+  checksum-validation: yes
+  prealloc-sessions: 4096
+  inline: no
+  reassembly:
+    memcap: 512mb
+    depth: 2mb
+    toserver-chunk-size: 2560
+    toclient-chunk-size: 2560
+    randomize-chunk-size: yes
+
+# Detection engine
+detect-engine:
+  - profile: medium
+  - sgh-mpm-context: auto
+  - inspection-recursion-limit: 3000
+
+# Thresholding
+threshold:
+  - type: threshold
+    track: by_src
+    count: 10
+    seconds: 60
+
+# Reputation
+reputation:
+  memcap: 256mb
+  cache:
+    memcap: 128mb
+
+# Host OS policy
+host-os-policy:
+  windows: [0.0.0.0/0]
+  bsd: []
+  linux:
+    - 10.0.0.0/8
+    - 172.16.0.0/12
+    - 192.168.0.0/16
+
+# Engine settings
+engine:
+  analysis:
+    rules: no
+
+# Action order
+action-order:
+  - pass
+  - drop
+  - reject
+  - alert

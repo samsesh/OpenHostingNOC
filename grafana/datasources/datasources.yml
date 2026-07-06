@@ -1,0 +1,98 @@
+# =============================================================================
+# Grafana Datasources - Provisioning Configuration
+# =============================================================================
+apiVersion: 1
+
+deleteDatasources:
+  - name: Prometheus
+  - name: Loki
+  - name: OpenSearch
+  - name: ntopng
+  - name: LibreNMS
+  - name: Alertmanager
+
+datasources:
+  # ---- Prometheus (Primary Metrics) ----
+  - name: Prometheus
+    type: prometheus
+    access: proxy
+    url: http://prometheus:9090
+    isDefault: true
+    editable: true
+    jsonData:
+      timeInterval: 15s
+      queryTimeout: 60s
+      httpMethod: POST
+      alertmanagerUid: alertmanager
+      prometheusType: Prometheus
+      prometheusVersion: 3.13.0
+      exemplarTraceIdDestinations:
+        - name: trace_id
+          url:
+            url: http://tempo:3200
+            urlDisplayLabel: Tempo
+
+  # ---- Loki (Logs) ----
+  - name: Loki
+    type: loki
+    access: proxy
+    url: http://loki:3100
+    editable: true
+    jsonData:
+      maxLines: 1000
+      derivedFields:
+        - name: trace_id
+          type: regex
+          matcherRegex: '"traceId":"(\w+)"'
+          url:
+            url: http://tempo:3200
+            urlDisplayLabel: Tempo
+
+  # ---- OpenSearch (Security Events & Analytics) ----
+  - name: OpenSearch
+    type: grafana-opensearch-datasource
+    access: proxy
+    url: https://opensearch:9200
+    editable: true
+    jsonData:
+      database: '[ntopng-flows-]YYYY.MM.DD'
+      flavor: opensearch
+      index: ntopng-flows-*
+      maxConcurrentShardRequests: 3
+      timeField: '@timestamp'
+      tlsSkipVerify: true
+      version: 2.19.5
+    secureJsonData:
+      basicAuthPassword: ${OPENSEARCH_INITIAL_ADMIN_PASSWORD:-changeme}
+    basicAuth: true
+    basicAuthUser: admin
+
+  # ---- ntopng (Traffic Analysis) ----
+  - name: ntopng
+    type: ntop-org-ntopng-datasource
+    access: proxy
+    url: http://ntopng:3000
+    editable: true
+    jsonData:
+      ntopngVersion: latest
+    secureJsonData:
+      apiKey: ""
+
+  # ---- LibreNMS (Network Monitoring) ----
+  - name: LibreNMS
+    type: grafana-simple-json-datasource
+    access: proxy
+    url: http://librenms:80/api/v0
+    editable: true
+    jsonData:
+      apiKey: ""
+
+  # ---- Alertmanager ----
+  - name: Alertmanager
+    type: alertmanager
+    access: proxy
+    url: http://alertmanager:9093
+    editable: true
+    jsonData:
+      handleGrafanaManagedAlerts: false
+      implementation: prometheus

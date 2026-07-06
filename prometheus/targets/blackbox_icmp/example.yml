@@ -1,0 +1,29 @@
+# =============================================================================
+# Blackbox ICMP Targets
+# =============================================================================
+# Targets to ping for latency/loss monitoring.
+# ---------------------------------------------------------------------------
+
+- targets:
+    - '8.8.8.8'
+  labels:
+    target: google-dns
+    type: external
+
+- targets:
+    - '1.1.1.1'
+  labels:
+    target: cloudflare-dns
+    type: external
+
+- targets:
+    - '192.168.1.1'
+  labels:
+    target: core-router
+    type: internal
+
+- targets:
+    - '192.168.1.254'
+  labels:
+    target: firewall
+    type: internal

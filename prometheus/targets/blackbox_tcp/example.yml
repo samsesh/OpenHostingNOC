@@ -1,0 +1,26 @@
+# =============================================================================
+# Blackbox TCP Targets
+# =============================================================================
+# Targets to probe via TCP port check.
+# ---------------------------------------------------------------------------
+
+- targets:
+    - 'github.com:443'
+  labels:
+    target: github
+    type: external
+    port: https
+
+- targets:
+    - 'google.com:443'
+  labels:
+    target: google
+    type: external
+    port: https
+
+- targets:
+    - 'smtp.example.com:25'
+  labels:
+    target: smtp
+    type: internal
+    port: smtp

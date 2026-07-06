@@ -1,0 +1,54 @@
+# Sensitive / Secrets
+.env
+*.secret
+**/secrets/*
+!**/secrets/.gitkeep
+!**/secrets/example_*
+
+# Data / State directories (Docker volumes mounted locally)
+mariadb/data/*
+mariadb/backup/*
+redis/data/*
+opensearch/data/*
+opensearch/backup/*
+librenms/data/*
+librenms/rrd/*
+librenms/logs/*
+librenms/oxidized/*
+ntopng/data/*
+ntopng/logs/*
+loki/data/*
+prometheus/data/*
+grafana/data/*
+alertmanager/data/*
+
+# Keep structure but ignore contents
+**/data/*
+!**/data/.gitkeep
+!**/rules/.gitkeep
+!**/targets/.gitkeep
+!**/alerts/.gitkeep
+
+# Logs
+*.log
+security/suricata/logs/*
+
+# OS files
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# IDE
+.vscode/
+.idea/
+*.sublime-*
+
+# Docker
+docker-compose.override.yml
+
+# Backup archives
+backups/*.tar.gz
+backups/*.sql
+backups/*.dump

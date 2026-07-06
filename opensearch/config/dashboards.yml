@@ -1,0 +1,60 @@
+# =============================================================================
+# OpenSearch Dashboards Configuration - OpenHostingNOC
+# =============================================================================
+
+server.host: ${OPENSEARCH_DASHBOARDS_SERVER_HOST:-0.0.0.0}
+server.port: ${OPENSEARCH_DASHBOARDS_SERVER_PORT:-5601}
+server.name: "OpenHostingNOC - OpenSearch Dashboards"
+server.basePath: ""
+
+opensearch.hosts: ["${OPENSEARCH_DASHBOARDS_OPENSEARCH_HOSTS:-https://opensearch:9200}"]
+opensearch.ssl.verificationMode: none
+
+opensearch.username: "admin"
+opensearch.password: ${OPENSEARCH_INITIAL_ADMIN_PASSWORD:-changeme}
+
+# Security
+opensearch_security.multitenancy.enabled: ${MULTI_TENANT_ENABLED:-false}
+opensearch_security.readonly_mode.roles: ["kibana_read_only"]
+
+# Logging
+logging.dest: stdout
+logging.silent: false
+logging.quiet: false
+logging.verbose: false
+logging.timezone: ${TIMEZONE:-UTC}
+logging.root.level: ${LOG_LEVEL:-info}
+
+# Maps
+map.includeElasticMapsService: false
+map.regionmap:
+  includeElasticMapsService: false
+  layers: []
+
+# Telemetry
+telemetry.enabled: false
+telemetry.optIn: false
+telemetry.optInStatusUrl: ""
+telemetry.sendUsageFrom: "server"
+telemetry.optInNotificationBanner: false
+
+# Visualization
+visualization.enable_experimental_vis: false
+
+# Max response size
+opensearch.maxResponseSize: 100mb
+
+# Request Timeout
+opensearch.requestTimeout: 60000
+opensearch.shardTimeout: 30000
+
+# Default route
+uiSettings:
+  overrides:
+    theme: v8-dark
+    defaultRoute: /app/dashboards
+    dateFormat: "YYYY-MM-DD HH:mm:ss"
+    dateFormat:tz: ${TIMEZONE:-UTC}
+    discoverSampleSize: 100
+    discoverSampleRows: 50
+    discover_maxDisplayedColumns: 20

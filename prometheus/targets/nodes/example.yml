@@ -1,0 +1,27 @@
+# =============================================================================
+# External Node Exporter Targets
+# =============================================================================
+# Add your monitored servers here.
+# Format:
+#   - targets: ['host:9100']
+#     labels:
+#       host: server-name
+#       role: server|router|switch|firewall
+#       location: dc1
+# ---------------------------------------------------------------------------
+
+- targets:
+    - 'server-01.example.com:9100'
+  labels:
+    host: server-01
+    role: server
+    location: dc1
+    os: linux
+
+- targets:
+    - 'server-02.example.com:9100'
+  labels:
+    host: server-02
+    role: server
+    location: dc1
+    os: linux

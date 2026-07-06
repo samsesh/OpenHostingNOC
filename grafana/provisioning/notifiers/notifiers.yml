@@ -1,0 +1,53 @@
+# =============================================================================
+# Grafana Notifiers - Provisioning Configuration
+# =============================================================================
+apiVersion: 1
+
+notifiers:
+  - name: Telegram Alerts
+    type: telegram
+    uid: telegram-alerts
+    org_id: 1
+    is_default: false
+    send_reminder: true
+    frequency: 15m
+    disable_resolve_message: false
+    settings:
+      bottoken: ${TELEGRAM_BOT_TOKEN}
+      chatid: ${TELEGRAM_CHAT_ID_CRITICAL}
+
+  - name: Email Alerts
+    type: email
+    uid: email-alerts
+    org_id: 1
+    is_default: true
+    send_reminder: true
+    frequency: 30m
+    disable_resolve_message: false
+    settings:
+      addresses: ${SMTP_TO}
+      singleEmail: true
+
+  - name: Discord
+    type: discord
+    uid: discord-alerts
+    org_id: 1
+    is_default: false
+    send_reminder: false
+    disable_resolve_message: false
+    settings:
+      url: ${DISCORD_WEBHOOK_URL}
+      message: '{{ template "default.message" . }}'
+
+  - name: Slack
+    type: slack
+    uid: slack-alerts
+    org_id: 1
+    is_default: false
+    send_reminder: false
+    disable_resolve_message: false
+    settings:
+      url: ${SLACK_API_URL}
+      recipient: '#ops-alerts'
+      username: OpenHostingNOC
+      icon_emoji: ':alert:'

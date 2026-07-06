@@ -1,0 +1,82 @@
+# =============================================================================
+# Fail2Ban Configuration - OpenHostingNOC
+# =============================================================================
+# Copy to /etc/fail2ban/jail.local
+# =============================================================================
+
+[DEFAULT]
+# Ban action
+banaction = iptables-multiport
+banaction_allports = iptables-allports
+
+# Ban time: 1 hour
+bantime = ${FAIL2BAN_BANTIME:-3600}
+
+# Find time: 10 minutes
+findtime = ${FAIL2BAN_FINDTIME:-600}
+
+# Max retries before ban
+maxretry = ${FAIL2BAN_MAXRETRY:-5}
+
+# Ignore IPs (internal networks, monitored infrastructure)
+ignoreip = 127.0.0.1/8 ::1 10.0.0.0/8 172.16.0.0/12 192.168.0.0/16
+
+# Log encoding
+logencoding = utf-8
+
+# Destination email
+destemail = ${SMTP_TO:-root@localhost}
+sender = fail2ban@${DOMAIN:-noc.example.com}
+sendername = Fail2Ban
+
+# Action
+action = %(action_mwl)s
+
+[sshd]
+enabled = true
+port = ssh
+filter = sshd
+logpath = /var/log/auth.log
+maxretry = 5
+bantime = 3600
+
+[sshd-ddos]
+enabled = true
+port = ssh
+filter = sshd-ddos
+logpath = /var/log/auth.log
+maxretry = 10
+bantime = 7200
+
+[traefik-auth]
+enabled = true
+port = http,https
+filter = traefik-auth
+logpath = /var/log/traefik/access.log
+maxretry = 10
+findtime = 300
+bantime = 3600
+
+[librenms-auth]
+enabled = true
+port = http,https
+filter = librenms-auth
+logpath = /opt/librenms/logs/auth.log
+maxretry = 5
+bantime = 3600
+
+[nginx-http-auth]
+enabled = true
+port = http,https
+filter = nginx-http-auth
+logpath = /var/log/nginx/error.log
+maxretry = 5
+bantime = 3600
+
+[recidive]
+enabled = true
+filter = recidive
+logpath = /var/log/fail2ban.log
+maxretry = 3
+findtime = 86400
+bantime = 604800

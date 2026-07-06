@@ -1,0 +1,166 @@
+# =============================================================================
+# Network Alert Rules
+# =============================================================================
+
+groups:
+  - name: network
+    interval: 30s
+    rules:
+
+      # ---- Ping / ICMP Availability ----
+      - alert: PingUnreachable
+        expr: probe_success{job="blackbox-icmp"} == 0
+        for: 2m
+        labels:
+          severity: critical
+          category: network
+        annotations:
+          summary: "Ping unreachable: {{ $labels.instance }}"
+          description: "{{ $labels.instance }} is not responding to ICMP ping for 2 minutes."
+          value: "{{ $value }}"
+
+      - alert: PingLatencyHigh
+        expr: probe_icmp_duration_ms{job="blackbox-icmp"} > 200
+        for: 5m
+        labels:
+          severity: warning
+          category: network
+        annotations:
+          summary: "High ping latency to {{ $labels.instance }}"
+          description: "{{ $labels.instance }} latency is {{ $value }}ms."
+          value: "{{ $value }}ms"
+
+      - alert: PacketLossDetected
+        expr: probe_icmp_loss_ratio{job="blackbox-icmp"} > 0.1
+        for: 2m
+        labels:
+          severity: warning
+          category: network
+        annotations:
+          summary: "Packet loss detected to {{ $labels.instance }}"
+          description: "{{ $labels.instance }} has {{ $value | humanizePercentage }} packet loss."
+          value: "{{ $value | humanizePercentage }}"
+
+      - alert: CriticalPacketLoss
+        expr: probe_icmp_loss_ratio{job="blackbox-icmp"} > 0.5
+        for: 1m
+        labels:
+          severity: critical
+          category: network
+        annotations:
+          summary: "Critical packet loss to {{ $labels.instance }}"
+          description: "{{ $labels.instance }} has {{ $value | humanizePercentage }} packet loss."
+
+      # ---- HTTP/HTTPS Availability ----
+      - alert: HTTPUnreachable
+        expr: probe_success{job="blackbox-http"} == 0
+        for: 2m
+        labels:
+          severity: critical
+          category: network
+        annotations:
+          summary: "HTTP unreachable: {{ $labels.instance }}"
+          description: "{{ $labels.instance }} is not responding to HTTP probe for 2 minutes."
+
+      - alert: HTTPResponseTimeHigh
+        expr: probe_http_duration_seconds{job="blackbox-http"} > 5
+        for: 5m
+        labels:
+          severity: warning
+          category: network
+        annotations:
+          summary: "High HTTP response time to {{ $labels.instance }}"
+          description: "{{ $labels.instance }} response time is {{ $value }}s."
+
+      - alert: HTTPCertificateExpiring
+        expr: probe_ssl_earliest_cert_expiry{job="blackbox-http"} - time() < 86400 * 7
+        for: 1h
+        labels:
+          severity: critical
+          category: network
+        annotations:
+          summary: "SSL certificate expiring for {{ $labels.instance }}"
+          description: "Certificate for {{ $labels.instance }} expires in {{ printf \"%.0f\" (($value - time()) / 86400) }} days."
+
+      - alert: HTTPCertificateWarning
+        expr: probe_ssl_earliest_cert_expiry{job="blackbox-http"} - time() < 86400 * 14
+        for: 1h
+        labels:
+          severity: warning
+          category: network
+        annotations:
+          summary: "SSL certificate expiring soon for {{ $labels.instance }}"
+          description: "Certificate for {{ $labels.instance }} expires in {{ printf \"%.0f\" (($value - time()) / 86400) }} days."
+
+      # ---- TCP Port Check ----
+      - alert: TCPPortUnreachable
+        expr: probe_success{job="blackbox-tcp"} == 0
+        for: 2m
+        labels:
+          severity: critical
+          category: network
+        annotations:
+          summary: "TCP port unreachable: {{ $labels.instance }}"
+          description: "{{ $labels.instance }} is not responding to TCP probe for 2 minutes."
+
+      # ---- DNS ----
+      - alert: DNSUnreachable
+        expr: probe_success{job="blackbox-dns"} == 0
+        for: 2m
+        labels:
+          severity: critical
+          category: network
+        annotations:
+          summary: "DNS server unreachable: {{ $labels.instance }}"
+          description: "DNS server {{ $labels.instance }} is not responding for 2 minutes."
+
+      - alert: DNSResolutionSlow
+        expr: probe_dns_duration_seconds{job="blackbox-dns"} > 1
+        for: 5m
+        labels:
+          severity: warning
+          category: network
+        annotations:
+          summary: "Slow DNS resolution from {{ $labels.instance }}"
+          description: "DNS server {{ $labels.instance }} takes {{ $value }}s to resolve."
+
+      # ---- SNMP Device Alerts ----
+      - alert: SNMPDeviceUnreachable
+        expr: snmp_up{job="snmp"} == 0
+        for: 3m
+        labels:
+          severity: critical
+          category: network
+        annotations:
+          summary: "SNMP device unreachable: {{ $labels.instance }}"
+          description: "{{ $labels.instance }} is not responding to SNMP for 3 minutes."
+
+      - alert: HighInterfaceUtilization
+        expr: rate(ifHCInOctets{job="snmp"}[5m]) * 8 / ifHighSpeed{job="snmp"} > 0.9
+        for: 10m
+        labels:
+          severity: warning
+          category: network
+        annotations:
+          summary: "High interface utilization on {{ $labels.instance }}"
+          description: "{{ $labels.instance }} {{ $labels.ifName }} is at {{ $value | humanizePercentage }} utilization."
+
+      - alert: InterfaceDown
+        expr: ifOperStatus{job="snmp"} == 2
+        for: 2m
+        labels:
+          severity: critical
+          category: network
+        annotations:
+          summary: "Interface down on {{ $labels.instance }}"
+          description: "{{ $labels.instance }} {{ $labels.ifName }} is down (operStatus=down)."
+
+      - alert: BGPSessionDown
+        expr: bgpPeerState{job="snmp"} != 6
+        for: 2m
+        labels:
+          severity: critical
+          category: network
+        annotations:
+          summary: "BGP session down on {{ $labels.instance }}"
+          description: "BGP session to {{ $labels.bgpPeerIdentifier }} on {{ $labels.instance }} is not in established state."

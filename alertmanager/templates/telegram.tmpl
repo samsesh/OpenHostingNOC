@@ -1,0 +1,70 @@
+{{- define "telegram-warning" -}}
+⚠️ <b>WARNING</b> - {{ .GroupLabels.alertname }}
+<b>Severity:</b> {{ .CommonLabels.severity }}
+<b>Instance:</b> {{ .CommonLabels.instance }}
+<b>Summary:</b> {{ .CommonAnnotations.summary }}
+<b>Description:</b> {{ .CommonAnnotations.description }}
+<b>Active since:</b> {{ .StartsAt.Format "2006-01-02 15:04:05 UTC" }}
+{{- if gt (len .Alerts.Firing) 1 }}
+<b>Total alerts:</b> {{ len .Alerts.Firing }}
+{{- end }}
+<a href="{{ .ExternalURL }}">View in Alertmanager</a>
+{{- end -}}
+
+{{- define "telegram-critical" -}}
+🔴 <b>CRITICAL</b> - {{ .GroupLabels.alertname }}
+<b>Severity:</b> {{ .CommonLabels.severity }}
+<b>Instance:</b> {{ .CommonLabels.instance }}
+<b>Summary:</b> {{ .CommonAnnotations.summary }}
+<b>Description:</b> {{ .CommonAnnotations.description }}
+<b>Current value:</b> {{ .CommonAnnotations.value }}
+<b>Active since:</b> {{ .StartsAt.Format "2006-01-02 15:04:05 UTC" }}
+{{- if gt (len .Alerts.Firing) 1 }}
+<b>Total alerts:</b> {{ len .Alerts.Firing }}
+{{- end }}
+<a href="{{ .ExternalURL }}">View in Alertmanager</a>
+{{- end -}}
+
+{{- define "telegram-emergency" -}}
+🚨🚨🚨 <b>EMERGENCY</b> 🚨🚨🚨
+<b>Alert:</b> {{ .GroupLabels.alertname }}
+<b>Instance:</b> {{ .CommonLabels.instance }}
+<b>Summary:</b> {{ .CommonAnnotations.summary }}
+<b>Description:</b> {{ .CommonAnnotations.description }}
+<b>Current value:</b> {{ .CommonAnnotations.value }}
+<b>Active since:</b> {{ .StartsAt.Format "2006-01-02 15:04:05 UTC" }}
+{{- if gt (len .Alerts.Firing) 1 }}
+<b>Total alerts:</b> {{ len .Alerts.Firing }}
+{{- end }}
+<a href="{{ .ExternalURL }}">View in Alertmanager</a>
+{{- end -}}
+
+{{- define "telegram-security" -}}
+🔒 <b>SECURITY ALERT</b>
+<b>Type:</b> {{ .GroupLabels.alertname }}
+<b>Source:</b> {{ .CommonLabels.instance }}
+<b>Attack:</b> {{ .CommonAnnotations.attack_type }}
+<b>Target:</b> {{ .CommonAnnotations.target }}
+<b>PPS:</b> {{ .CommonAnnotations.pps }}
+<b>BPS:</b> {{ .CommonAnnotations.bps }}
+<b>Active since:</b> {{ .StartsAt.Format "2006-01-02 15:04:05 UTC" }}
+<a href="{{ .ExternalURL }}">View in Alertmanager</a>
+{{- end -}}
+
+{{- define "telegram-network" -}}
+🌐 <b>NETWORK ALERT</b>
+<b>Alert:</b> {{ .GroupLabels.alertname }}
+<b>Device:</b> {{ .CommonLabels.instance }}
+<b>Summary:</b> {{ .CommonAnnotations.summary }}
+<b>Active since:</b> {{ .StartsAt.Format "2006-01-02 15:04:05 UTC" }}
+<a href="{{ .ExternalURL }}">View in Alertmanager</a>
+{{- end -}}
+
+{{- define "telegram-infra" -}}
+🖥 <b>INFRASTRUCTURE</b>
+<b>Alert:</b> {{ .GroupLabels.alertname }}
+<b>Host:</b> {{ .CommonLabels.instance }}
+<b>Summary:</b> {{ .CommonAnnotations.summary }}
+<b>Active since:</b> {{ .StartsAt.Format "2006-01-02 15:04:05 UTC" }}
+<a href="{{ .ExternalURL }}">View in Alertmanager</a>
+{{- end -}}

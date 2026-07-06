@@ -1,0 +1,163 @@
+# =============================================================================
+# Monitoring Infrastructure Alert Rules
+# =============================================================================
+
+groups:
+  - name: monitoring
+    interval: 30s
+    rules:
+
+      # ---- Core Services Availability ----
+      - alert: PrometheusDown
+        expr: up{job="prometheus"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          category: infrastructure
+        annotations:
+          summary: "Prometheus is down"
+          description: "Prometheus server is unreachable."
+
+      - alert: GrafanaDown
+        expr: up{job="grafana"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          category: infrastructure
+        annotations:
+          summary: "Grafana is down"
+          description: "Grafana server is unreachable."
+
+      - alert: AlertmanagerDown
+        expr: up{job="alertmanager"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          category: infrastructure
+        annotations:
+          summary: "Alertmanager is down"
+          description: "Alertmanager is unreachable. No alerts will be delivered."
+
+      - alert: LokiDown
+        expr: up{job="loki"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          category: infrastructure
+        annotations:
+          summary: "Loki is down"
+          description: "Loki log aggregation server is unreachable."
+
+      - alert: OpenSearchDown
+        expr: up{job="opensearch"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          category: infrastructure
+        annotations:
+          summary: "OpenSearch is down"
+          description: "OpenSearch cluster is unreachable."
+
+      - alert: OpenSearchClusterYellow
+        expr: opensearch_cluster_status == 1
+        for: 5m
+        labels:
+          severity: warning
+          category: infrastructure
+        annotations:
+          summary: "OpenSearch cluster status is yellow"
+          description: "OpenSearch cluster health changed to YELLOW."
+
+      - alert: OpenSearchClusterRed
+        expr: opensearch_cluster_status == 2
+        for: 1m
+        labels:
+          severity: critical
+          category: infrastructure
+        annotations:
+          summary: "OpenSearch cluster status is red"
+          description: "OpenSearch cluster health changed to RED."
+
+      # ---- Service Counts ----
+      - alert: TooManyAlertsFiring
+        expr: count(ALERTS{alertstate="firing"}) > 50
+        for: 5m
+        labels:
+          severity: warning
+          category: infrastructure
+        annotations:
+          summary: "Too many firing alerts"
+          description: "There are {{ $value }} alerts currently firing. Investigate potential cascading failure."
+
+      - alert: TooManyAlertsSilenced
+        expr: count(ALERTS{alertstate="suppressed"}) > 100
+        for: 10m
+        labels:
+          severity: warning
+          category: infrastructure
+        annotations:
+          summary: "Too many silenced alerts"
+          description: "There are {{ $value }} silenced alerts. Review silencing rules."
+
+      # ---- Disk Space on Monitoring Server ----
+      - alert: PrometheusDiskSpace
+        expr: (1 - (node_filesystem_avail_bytes{mountpoint="/prometheus",instance=~".*opennoc.*"} / node_filesystem_size_bytes{mountpoint="/prometheus",instance=~".*opennoc.*"})) * 100 > 85
+        for: 10m
+        labels:
+          severity: warning
+          category: infrastructure
+        annotations:
+          summary: "Prometheus disk space warning"
+          description: "Prometheus data directory is {{ $value | humanizePercentage }} full."
+
+      - alert: LokiDiskSpace
+        expr: (1 - (node_filesystem_avail_bytes{mountpoint="/loki",instance=~".*opennoc.*"} / node_filesystem_size_bytes{mountpoint="/loki",instance=~".*opennoc.*"})) * 100 > 85
+        for: 10m
+        labels:
+          severity: warning
+          category: infrastructure
+        annotations:
+          summary: "Loki disk space warning"
+          description: "Loki data directory is {{ $value | humanizePercentage }} full."
+
+      # ---- Exporter Status ----
+      - alert: ExporterDown
+        expr: up{job=~"node_external|snmp|blackbox-.*|cadvisor"} == 0
+        for: 5m
+        labels:
+          severity: warning
+          category: infrastructure
+        annotations:
+          summary: "Exporter {{ $labels.job }} is down"
+          description: "Exporter {{ $labels.job }} on {{ $labels.instance }} is unreachable."
+
+      # ---- Traefik ----
+      - alert: TraefikHighResponseTime
+        expr: histogram_quantile(0.95, sum(rate(traefik_service_request_duration_seconds_bucket[5m])) by (le,service)) > 5
+        for: 5m
+        labels:
+          severity: warning
+          category: infrastructure
+        annotations:
+          summary: "Traefik high response time for {{ $labels.service }}"
+          description: "P95 response time for {{ $labels.service }} is {{ $value }}s."
+
+      - alert: TraefikHigh4xxRate
+        expr: sum(rate(traefik_service_requests_total{code=~"4.*"}[5m])) / sum(rate(traefik_service_requests_total[5m])) * 100 > 10
+        for: 5m
+        labels:
+          severity: warning
+          category: infrastructure
+        annotations:
+          summary: "High 4xx error rate in Traefik"
+          description: "4xx error rate is {{ $value | humanizePercentage }}."
+
+      - alert: TraefikHigh5xxRate
+        expr: sum(rate(traefik_service_requests_total{code=~"5.*"}[5m])) / sum(rate(traefik_service_requests_total[5m])) * 100 > 5
+        for: 5m
+        labels:
+          severity: critical
+          category: infrastructure
+        annotations:
+          summary: "High 5xx error rate in Traefik"
+          description: "5xx error rate is {{ $value | humanizePercentage }}."

@@ -1,0 +1,71 @@
+# =============================================================================
+# Traefik Dynamic Config - Routers & Services
+# =============================================================================
+# Most routers are defined via Docker labels on each container.
+# This file contains catch-all / fallback routers and non-container routes.
+# ---------------------------------------------------------------------------
+
+http:
+  routers:
+
+    # ---- Catch-all Router: Redirect to Grafana ----
+    default:
+      entrypoints: websecure
+      rule: HostRegexp(`{host:.+}`)
+      priority: 1
+      tls:
+        certResolver: letsencrypt
+      middlewares:
+        - secHeaders
+      service: default-service
+
+    # ---- Dashboard: Traefik ----
+    traefik-dashboard:
+      entrypoints: websecure
+      rule: Host(`traefik.${DOMAIN}`)
+      service: traefik-service
+      middlewares:
+        - secHeaders
+        - ratelimit
+        - admin-whitelist
+      tls:
+        certResolver: letsencrypt
+
+    # ---- Health check endpoint ----
+    ping:
+      entrypoints: web
+      rule: PathPrefix(`/ping`)
+      service: ping-service
+      middlewares: []
+
+  services:
+    default-service:
+      loadBalancer:
+        servers:
+          - url: http://grafana:3000
+
+    traefik-service:
+      loadBalancer:
+        servers:
+          - url: http://traefik:8080
+
+    ping-service:
+      loadBalancer:
+        servers:
+          - url: http://traefik:8080/ping
+
+  # ---- TLS Configuration ----
+  tls:
+    options:
+      default:
+        minVersion: VersionTLS12
+        maxVersion: VersionTLS13
+        cipherSuites:
+          - TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384
+          - TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
+          - TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256
+          - TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
+          - TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305
+          - TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305
+        sniStrict: false
+        preferServerCipherSuites: true
