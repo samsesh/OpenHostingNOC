@@ -380,3 +380,9 @@ MIT License — see [LICENSE](LICENSE) for details.
 
 - [GitHub Issues](https://github.com/your-org/OpenHostingNOC/issues)
 - [Discussions](https://github.com/your-org/OpenHostingNOC/discussions)
+
+## Donate
+
+If you find this project useful, consider supporting development:
+
+- **Donation Page**: [donate.samsesh.net](https://donate.samsesh.net)

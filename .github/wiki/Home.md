@@ -50,4 +50,12 @@ Welcome to the OpenHostingNOC wiki!
 
 ---
 
+## ❤️ Support
+
+If OpenHostingNOC helps your operations, consider donating:
+
+[**donate.samsesh.net**](https://donate.samsesh.net)
+
+---
+
 *Last updated: 2026-07-06*
