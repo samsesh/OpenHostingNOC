@@ -20,6 +20,9 @@
 
 ### Network Requirements
 
+**Quick setup (no domain):** No network requirements — uses `nip.io` for auto-resolution, HTTP only.
+
+**Full setup (production):**
 - **Public Domain**: `noc.example.com` (or your domain)
 - **Ports**: 80 (HTTP redirect), 443 (HTTPS)
 - **DNS Records**: `*.noc.example.com` pointing to your NOC server IP
@@ -46,50 +49,34 @@ git clone https://github.com/samsesh/OpenHostingNOC.git
 cd OpenHostingNOC
 ```
 
-### 3. Configure Environment
-
-```bash
-cp .env.example .env
-nano .env
-```
-
-**Required changes in .env:**
-
-```bash
-DOMAIN=noc.example.com                    # Your domain
-TRAEFIK_ACME_EMAIL=admin@example.com       # For Let's Encrypt
-
-# LDAP Configuration
-OPENLDAP_DOMAIN=noc.example.com
-OPENLDAP_ADMIN_PASSWORD=<strong-password>
-
-# Passwords (change all defaults)
-MARIADB_ROOT_PASSWORD=<strong-password>
-GRAFANA_ADMIN_PASSWORD=<strong-password>
-LIBRENMS_DB_PASSWORD=<strong-password>
-OPENSEARCH_INITIAL_ADMIN_PASSWORD=<strong-password>
-REDIS_PASSWORD=<strong-password>
-
-# Alerting
-TELEGRAM_BOT_TOKEN=<token>
-TELEGRAM_CHAT_ID_CRITICAL=<chat-id>
-```
-
-### 4. Run Installation
+### 3. Run Installation
 
 ```bash
 sudo ./scripts/install.sh
 ```
 
 The script will:
-1. Create directory structure
-2. Pull all Docker images
-3. Start all services
-4. Wait for health checks
-5. Initialize LibreNMS database
-6. Provide post-installation URLs
+1. Prompt for **Quick Setup** (nip.io, no TLS, default passwords) or **Full Setup** (real domain, Let's Encrypt, secure passwords)
+2. Automatically generate `.env` with your choices
+3. Create directory structure
+4. Pull all Docker images
+5. Start all services
+6. Wait for health checks
+7. Initialize LibreNMS database
+8. Provide access URLs
 
-### 5. Verify Installation
+### Custom .env (manual)
+
+To customize before deploying, run the generator separately:
+
+```bash
+./scripts/generate-env.sh            # Interactive (quick or full)
+./scripts/generate-env.sh --quick    # Non-interactive quick setup
+./scripts/generate-env.sh --full     # Non-interactive full setup
+sudo ./scripts/install.sh
+```
+
+### 4. Verify Installation
 
 ```bash
 # Check all services
@@ -102,7 +89,7 @@ docker compose ps
 docker compose logs -f
 ```
 
-### 6. Configure DNS
+### 5. Configure DNS (full setup only)
 
 Create DNS A records pointing to your NOC server IP:
 
@@ -115,12 +102,13 @@ alertmanager.noc.example.com A <NOC_SERVER_IP>
 dashboards.noc.example.com A <NOC_SERVER_IP>
 loki.noc.example.com       A <NOC_SERVER_IP>
 ldap.noc.example.com       A <NOC_SERVER_IP>
-traefik.noc.example.com    A <NOC_SERVER_IP>
+auth.noc.example.com       A <NOC_SERVER_IP>
 ```
 
-### 7. Access Services
+### 6. Access Services
 
-Open the URLs in your browser. HTTPS certificates are automatically provisioned by Let's Encrypt.
+**Quick setup**: `http://<YOUR_IP>:<PORT>` — no TLS, default creds `admin`/`admin`.
+**Full setup**: `https://<service>.${DOMAIN}` — TLS via Let's Encrypt.
 
 ## Post-Installation
 

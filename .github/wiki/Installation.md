@@ -9,7 +9,7 @@
 | Storage | 200 GB SSD | 1TB+ NVMe |
 | Network | 1 Gbps | 10+ Gbps |
 
-**Software**: Ubuntu 22.04+ / Debian 12+, Docker 24.0+, Docker Compose v2.20+
+**Software**: Ubuntu 22.04+ / Debian 12+ / Rocky Linux 9+, Docker 24.0+, Docker Compose v2.20+
 
 ## Quick Install
 
@@ -22,22 +22,31 @@ sudo usermod -aG docker $USER && newgrp docker
 git clone https://github.com/samsesh/OpenHostingNOC.git
 cd OpenHostingNOC
 
-# 3. Configure
-cp .env.example .env
-nano .env   # set DOMAIN, passwords, tokens
-
-# 4. Deploy
+# 3. Deploy (generates .env, pulls images, starts all services)
 sudo ./scripts/install.sh
+```
+
+Choose **Quick Setup** (nip.io, no TLS, default `admin`/`admin`) or **Full Setup** (real domain, Let's Encrypt, random passwords).
+
+## Custom .env Generation
+
+To generate `.env` without installing:
+
+```bash
+./scripts/generate-env.sh            # Interactive
+./scripts/generate-env.sh --quick    # Quick (no prompts)
+./scripts/generate-env.sh --full     # Full (prompts for domain)
 ```
 
 ## What the Install Script Does
 
-1. Creates directory structure
-2. Pulls all Docker images
-3. Starts all 18+ services
-4. Waits for health checks
-5. Initializes LibreNMS database
-6. Provides post-installation URLs
+1. Runs `generate-env.sh` if `.env` is missing (quick or full)
+2. Creates directory structure
+3. Pulls all Docker images + builds auth service
+4. Starts all 18+ services
+5. Waits for health checks
+6. Initializes LibreNMS database
+7. Prints access URLs
 
 ## Verify
 
@@ -46,9 +55,7 @@ sudo ./scripts/install.sh
 docker compose ps
 ```
 
-## DNS Setup
-
-Create A records pointing to your NOC IP:
+## DNS Setup (full setup only)
 
 ```
 grafana.noc.example.com      A <NOC_IP>
@@ -57,24 +64,21 @@ ntopng.noc.example.com       A <NOC_IP>
 prometheus.noc.example.com   A <NOC_IP>
 alertmanager.noc.example.com A <NOC_IP>
 dashboards.noc.example.com   A <NOC_IP>
-loki.noc.example.com         A <NOC_IP>
-ldap.noc.example.com         A <NOC_IP>
 auth.noc.example.com         A <NOC_IP>
 ```
 
-## Post-Installation
+## Access
 
-- **Add users** via LDAP Admin at `https://ldap.<DOMAIN>`
-- **Add Node Exporters** in `prometheus/targets/nodes/`
-- **Add SNMP devices** in `prometheus/targets/snmp/`
-- **Configure NetFlow** on network devices → ntopng (ports 2055/4739/6343)
+- **Quick setup**: `http://<YOUR_IP>:<PORT>` — no TLS, default `admin`/`admin`
+- **Full setup**: `https://<service>.${DOMAIN}` — TLS via Let's Encrypt
 
 ## Next Steps
 
-1. Add monitoring targets
-2. Configure alert notifications (Telegram, Discord, Slack)
-3. Customize Grafana dashboards
-4. Set up Suricata IDS (optional)
+1. Add monitoring targets (Node Exporters, SNMP devices)
+2. Configure NetFlow/sFlow on network devices → ntopng (ports 2055/4739/6343)
+3. Set up alert notifications (Telegram, Discord, Slack)
+4. Customize Grafana dashboards
+5. Review [Configuration](Configuration) for all options
 
 ---
 

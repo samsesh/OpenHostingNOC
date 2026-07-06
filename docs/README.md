@@ -44,18 +44,14 @@ A comprehensive, self-hosted Network Operations Center (NOC) platform for hostin
 ## Quick Start
 
 ```bash
-# 1. Clone and configure
-cp .env.example .env
-nano .env
-
-# 2. Run installation
+# Clone and deploy (generates .env automatically)
+git clone https://github.com/samsesh/OpenHostingNOC.git
+cd OpenHostingNOC
 sudo ./scripts/install.sh
-
-# 3. Access dashboards
-open https://grafana.$DOMAIN
-open https://librenms.$DOMAIN
-open https://ntopng.$DOMAIN
 ```
+
+Choose **Quick Setup** (no domain, no TLS, default `admin`/`admin`)
+or **Full Setup** (real domain, Let's Encrypt, random passwords).
 
 ## Documentation
 

@@ -1,72 +1,47 @@
 # Quick Start
 
-Get OpenHostingNOC running in under 10 minutes.
+Get OpenHostingNOC running in 2 commands.
 
 ## Prerequisites
 
-- Docker 24.0+ and Docker Compose v2.20+
-- A domain with wildcard DNS (e.g., `*.noc.example.com`)
-- 4 CPU cores, 16GB RAM, 200GB SSD
-- Ports 80 and 443 reachable from the internet (for Let's Encrypt)
+- Docker 24.0+, Docker Compose v2.20+
+- Ubuntu 22.04+ / Debian 12+ / Rocky Linux 9+
+- 4 CPU cores, 16 GB RAM, 200 GB SSD
 
-## Step 1: Clone & Configure
+## Quick Setup (no domain, no TLS)
 
 ```bash
 git clone https://github.com/samsesh/OpenHostingNOC.git
 cd OpenHostingNOC
-
-cp .env.example .env
-```
-
-Edit `.env` — set at minimum:
-
-```bash
-DOMAIN=noc.example.com
-TRAEFIK_ACME_EMAIL=admin@example.com
-OPENLDAP_ADMIN_PASSWORD=your-strong-password
-MARIADB_ROOT_PASSWORD=your-strong-password
-GRAFANA_ADMIN_PASSWORD=your-strong-password
-OPENSEARCH_INITIAL_ADMIN_PASSWORD=your-strong-password
-```
-
-## Step 2: Run Installer
-
-```bash
 sudo ./scripts/install.sh
 ```
 
-## Step 3: Verify
+Choose **option 1 (Quick Setup)** when prompted. The script auto-detects your server IP and uses `nip.io` for hostname resolution.
+
+**Access services at:**
+| Service | URL | Credentials |
+|---|---|---|
+| Grafana | `http://<IP>:3000` | admin / admin |
+| LibreNMS | `http://<IP>:8000` | admin / admin |
+| Prometheus | `http://<IP>:9090` | via SSO |
+| ntopng | `http://<IP>:3003` | via SSO |
+| Alertmanager | `http://<IP>:9093` | via SSO |
+| OpenSearch Dashboards | `http://<IP>:5601` | admin / admin |
+
+## Full Setup (production)
 
 ```bash
-./scripts/healthcheck.sh
-docker compose ps
+git clone https://github.com/samsesh/OpenHostingNOC.git
+cd OpenHostingNOC
+sudo ./scripts/install.sh
 ```
 
-## Step 4: Access Services
+Choose **option 2 (Full Setup)**. Requires a domain with wildcard DNS pointing to your server.
 
-Once Traefik provisions certificates (may take 60s), access:
+## What's Next?
 
-- **Grafana**: `https://grafana.$DOMAIN`
-- **LibreNMS**: `https://librenms.$DOMAIN`
-- **ntopng**: `https://ntopng.$DOMAIN`
-- **OpenSearch Dashboards**: `https://dashboards.$DOMAIN`
-
-## Step 5: Add Monitoring Targets
-
-```bash
-# Node Exporters
-nano prometheus/targets/nodes/example.yml
-
-# SNMP Devices
-nano prometheus/targets/snmp/example.yml
-
-# Reload Prometheus
-docker compose exec prometheus kill -HUP 1
-```
-
-## Next Steps
-
-- [Add users via LDAP](Configuration#ldap)
-- [Configure NetFlow on routers](NetFlow-Examples)
-- [Set up Telegram alerts](Configuration#alerting)
-- [Review security settings](Security)
+- Add Node Exporters to monitored servers (`prometheus/targets/nodes/`)
+- Configure NetFlow/sFlow on network devices → ntopng
+- Set up alert notifications in `.env` (Telegram, Discord, Slack)
+- Explore pre-built Grafana dashboards
+- Review [Configuration](Configuration) for all options

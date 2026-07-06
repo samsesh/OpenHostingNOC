@@ -158,55 +158,71 @@
 
 - Docker 24.0+ & Compose v2.20+
 - Ubuntu 22.04+ / Debian 12+ / Rocky Linux 9+
-- Domain with wildcard DNS pointing to your NOC server
 - 4+ CPU cores, 16GB+ RAM, 200GB+ SSD
 
-### Installation
+### Option 1: Quick Setup (no domain, no TLS, default passwords)
+
+Try OpenHostingNOC in 2 commands — uses `nip.io` to auto-resolve your IP, HTTP only:
 
 ```bash
-# Clone the repository
 git clone https://github.com/samsesh/OpenHostingNOC.git
 cd OpenHostingNOC
-
-# Configure environment
-cp .env.example .env
-nano .env                          # Set DOMAIN, passwords, tokens
-
-# Run automated install
-sudo ./scripts/install.sh
+sudo ./scripts/install.sh    # Choose option 1 (Quick Setup)
 ```
 
-The installer will:
-1. Create directory structure
-2. Pull all Docker images
-3. Start all services
-4. Initialize LibreNMS
-5. Provide access URLs
+Access at `http://<YOUR_IP>:3000` (Grafana) — default credentials: `admin` / `admin`.
+
+### Option 2: Full Setup (production domain, Let's Encrypt TLS)
+
+```bash
+git clone https://github.com/samsesh/OpenHostingNOC.git
+cd OpenHostingNOC
+sudo ./scripts/install.sh    # Choose option 2 (Full Setup)
+```
+
+Requires a domain with wildcard DNS pointing to your server IP.
+
+### What the installer does
+
+1. Generates `.env` with your choice of quick or full settings
+2. Creates directory structure
+3. Pulls all Docker images
+4. Starts all 18+ services
+5. Waits for health checks
+6. Initializes LibreNMS
+7. Prints access URLs
 
 ### Post-Install
 
 ```bash
-# Check everything is healthy
-./scripts/healthcheck.sh
-
-# View service status
-docker compose ps
-
-# Follow logs
-docker compose logs -f
+./scripts/healthcheck.sh      # Check everything is healthy
+docker compose ps             # View service status
+docker compose logs -f        # Follow live logs
 ```
 
 ### Access URLs
 
-Once deployed, access your dashboards at:
+**Quick setup** (HTTP, no domain):
+
+| Service | URL | Default Credentials |
+|---|---|---|
+| Grafana | `http://<IP>:3000` | admin / admin |
+| Prometheus | `http://<IP>:9090` | admin / admin (via SSO) |
+| LibreNMS | `http://<IP>:8000` | admin / admin (via LDAP) |
+| ntopng | `http://<IP>:3003` | admin / admin (via SSO) |
+| Alertmanager | `http://<IP>:9093` | via SSO |
+| Loki | `http://<IP>:3100` | via SSO |
+| OpenSearch Dashboards | `http://<IP>:5601` | admin / admin |
+
+**Full setup** (HTTPS, your domain):
 
 | Service | URL | Auth |
 |---|---|---|
 | Grafana | `https://grafana.$DOMAIN` | LDAP |
 | LibreNMS | `https://librenms.$DOMAIN` | LDAP |
-| ntopng | `https://ntopng.$DOMAIN` | LDAP |
-| Prometheus | `https://prometheus.$DOMAIN` | LDAP |
-| Alertmanager | `https://alertmanager.$DOMAIN` | LDAP |
+| ntopng | `https://ntopng.$DOMAIN` | LDAP via SSO |
+| Prometheus | `https://prometheus.$DOMAIN` | LDAP via SSO |
+| Alertmanager | `https://alertmanager.$DOMAIN` | LDAP via SSO |
 | OpenSearch Dashboards | `https://dashboards.$DOMAIN` | admin + password |
 
 ---
