@@ -31,7 +31,7 @@ setup_logging() {
     log_info "Installation log: ${LOG_FILE}"
 }
 
-# Dump container logs for any failed services (details only to log file)
+# Dump container logs for any failed services
 dump_failed_logs() {
     local failed=()
     while IFS= read -r line; do
@@ -40,20 +40,15 @@ dump_failed_logs() {
     
     if [[ ${#failed[@]} -gt 0 ]]; then
         log_warn "The following containers failed: ${failed[*]}"
-        {
-            for container in "${failed[@]}"; do
-                local svc
-                svc=$(echo "$container" | sed 's/^opennoc-\(.*\)-[0-9]\+$/\1/')
-                echo ""
-                echo "--- Container logs for ${svc} (last 50 lines) ---"
-                docker compose $(compose_files) logs --tail=50 "$svc" 2>/dev/null || \
-                    docker logs "$container" --tail 50 2>/dev/null || true
-                echo "--- End of ${svc} logs ---"
-            done
-        } >> "${LOG_FILE}"
-        log_warn "Container logs saved to ${LOG_FILE}"
         for container in "${failed[@]}"; do
-            log_warn "  ${container} — run 'docker compose logs ${container#opennoc-}' to inspect"
+            local svc
+            svc=$(echo "$container" | sed 's/^opennoc-\(.*\)-[0-9]\+$/\1/')
+            echo ""
+            log_info "--- Container logs for ${svc} (last 50 lines) ---"
+            docker compose $(compose_files) logs --tail=50 "$svc" 2>/dev/null || \
+                docker logs "$container" --tail 50 2>/dev/null || true
+            log_info "--- End of ${svc} logs ---"
+            echo ""
         done
     fi
 }
