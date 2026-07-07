@@ -35,15 +35,9 @@ thread_pool.search.queue_size: 2000
 thread_pool.get.queue_size: 2000
 
 # Index management
+# NOTE: index.* settings cannot be set at node level in opensearch.yml.
+# Use cluster settings API or index templates instead.
 action.auto_create_index: true
-index.number_of_shards: ${OPENSEARCH_NUMBER_OF_SHARDS:-3}
-index.number_of_replicas: ${OPENSEARCH_NUMBER_OF_REPLICAS:-0}
-index.translog.durability: async
-index.translog.sync_interval: 5s
-index.refresh_interval: 30s
-index.search.slowlog.threshold.query.warn: 10s
-index.search.slowlog.threshold.fetch.warn: 5s
-index.indexing.slowlog.threshold.index.warn: 10s
 
 # Performance
 cluster.routing.allocation.disk.threshold_enabled: true
@@ -53,8 +47,7 @@ cluster.routing.allocation.disk.watermark.flood_stage: 95%
 cluster.info.update.interval: 30s
 
 # Slow logs
-index.search.slowlog.level: WARN
-index.indexing.slowlog.level: WARN
+# NOTE: slow log levels must be set per-index, not here.
 
 # Monitoring
 monitoring.collection.enabled: true
