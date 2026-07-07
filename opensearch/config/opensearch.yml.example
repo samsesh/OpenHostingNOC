@@ -1,0 +1,60 @@
+# =============================================================================
+# OpenSearch Configuration - OpenHostingNOC
+# =============================================================================
+
+# Cluster
+cluster.name: ${OPENSEARCH_CLUSTER_NAME:-opennoc-opensearch}
+node.name: ${OPENSEARCH_NODE_NAME:-opennoc-os-1}
+node.roles: [master, data, ingest, remote_cluster_client]
+path.data: /usr/share/opensearch/data
+path.logs: /usr/share/opensearch/logs
+path.repo: /usr/share/opensearch/backup
+
+# Network
+network.host: 0.0.0.0
+http.port: 9200
+transport.port: 9300
+http.cors.enabled: true
+http.cors.allow-origin: "*"
+http.cors.allow-headers: X-Requested-With,X-Auth-Token,Content-Type,Content-Length,Authorization
+http.cors.allow-credentials: true
+
+# Discovery
+discovery.type: ${OPENSEARCH_DISCOVERY_TYPE:-single-node}
+discovery.seed_hosts: []
+cluster.initial_master_nodes: ["${OPENSEARCH_NODE_NAME:-opennoc-os-1}"]
+
+# Memory
+bootstrap.memory_lock: ${OPENSEARCH_BOOTSTRAP_MEMORY_LOCK:-true}
+indices.memory.index_buffer_size: 10%
+indices.fielddata.cache.size: 20%
+
+# Thread pools
+thread_pool.write.queue_size: 2000
+thread_pool.search.queue_size: 2000
+thread_pool.get.queue_size: 2000
+
+# Index management
+action.auto_create_index: true
+index.number_of_shards: ${OPENSEARCH_NUMBER_OF_SHARDS:-3}
+index.number_of_replicas: ${OPENSEARCH_NUMBER_OF_REPLICAS:-0}
+index.translog.durability: async
+index.translog.sync_interval: 5s
+index.refresh_interval: 30s
+index.search.slowlog.threshold.query.warn: 10s
+index.search.slowlog.threshold.fetch.warn: 5s
+index.indexing.slowlog.threshold.index.warn: 10s
+
+# Performance
+cluster.routing.allocation.disk.threshold_enabled: true
+cluster.routing.allocation.disk.watermark.low: 85%
+cluster.routing.allocation.disk.watermark.high: 90%
+cluster.routing.allocation.disk.watermark.flood_stage: 95%
+cluster.info.update.interval: 30s
+
+# Slow logs
+index.search.slowlog.level: WARN
+index.indexing.slowlog.level: WARN
+
+# Monitoring
+monitoring.collection.enabled: true
