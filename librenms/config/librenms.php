@@ -21,7 +21,7 @@ $config['redis']['persistent'] = false;
 
 // Application URLs
 $config['base_url'] = 'https://' . (getenv('LIBRENMS_SERVER_NAME') ?: 'librenms') . '/';
-$config['force_https'] = true;
+$config['force_https'] = false;
 $config['webui']['login_background_image'] = false;
 
 // Auth
