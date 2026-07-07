@@ -452,7 +452,10 @@ services:
           memory: ${LIBRENMS_MEM:-2G}
     logging: *default-logging
     healthcheck:
-      <<: *healthcheck-start
+      start_period: 300s
+      interval: 20s
+      timeout: 10s
+      retries: 5
       test: ["CMD-SHELL", "curl -sf http://localhost:8000/health || exit 1"]
     labels:
       - traefik.enable=true
