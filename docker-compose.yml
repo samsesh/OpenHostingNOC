@@ -166,7 +166,6 @@ services:
       # Access Log
       - --accesslog=true
       - --accesslog.filepath=/var/log/traefik/access.log
-      - --accesslog.buffersize=100
       # Metrics
       - --metrics.prometheus=true
       - --metrics.prometheus.addrouterslabels=true
@@ -785,6 +784,7 @@ services:
       - TZ=${TIMEZONE:-UTC}
     command:
       - -config.file=/etc/promtail/promtail.yml
+      - -config.expand-env=true
       - -log.level=${LOG_LEVEL:-info}
     deploy:
       resources:
@@ -943,7 +943,6 @@ services:
       - --config.file=/etc/snmp_exporter/snmp.yml
       - --web.listen-address=:9116
       - --log.level=${LOG_LEVEL:-info}
-      - --snmp.walk-parallel=4
     deploy:
       resources:
         limits:

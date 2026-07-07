@@ -21,8 +21,6 @@ http.cors.allow-credentials: true
 
 # Discovery
 discovery.type: single-node
-discovery.seed_hosts: []
-cluster.initial_master_nodes: ["opennoc-os-1"]
 
 # Memory
 bootstrap.memory_lock: true

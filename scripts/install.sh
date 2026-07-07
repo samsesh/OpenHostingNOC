@@ -149,9 +149,9 @@ render_config_templates() {
 
     # Set valid default alerting values if not configured (allows alertmanager to start)
     export TELEGRAM_BOT_TOKEN="${TELEGRAM_BOT_TOKEN:-123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11}"
-    export TELEGRAM_CHAT_ID_WARNING="${TELEGRAM_CHAT_ID_WARNING:-0}"
-    export TELEGRAM_CHAT_ID_CRITICAL="${TELEGRAM_CHAT_ID_CRITICAL:-0}"
-    export TELEGRAM_CHAT_ID_EMERGENCY="${TELEGRAM_CHAT_ID_EMERGENCY:-0}"
+    export TELEGRAM_CHAT_ID_WARNING="${TELEGRAM_CHAT_ID_WARNING:--1001234567890}"
+    export TELEGRAM_CHAT_ID_CRITICAL="${TELEGRAM_CHAT_ID_CRITICAL:--1001234567890}"
+    export TELEGRAM_CHAT_ID_EMERGENCY="${TELEGRAM_CHAT_ID_EMERGENCY:--1001234567890}"
     export DISCORD_WEBHOOK_URL="${DISCORD_WEBHOOK_URL:-https://example.com/discord-webhook}"
     export SLACK_API_URL="${SLACK_API_URL:-https://hooks.slack.com/services/T00/B00/xxxxx}"
     export WEBHOOK_URL="${WEBHOOK_URL:-https://example.com/alerts-webhook}"
