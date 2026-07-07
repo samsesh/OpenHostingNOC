@@ -84,7 +84,6 @@ compactor:
   retention_enabled: true
   retention_delete_delay: 2h
   retention_delete_worker_count: 150
-  schedule_interval: 10m
 
 analytics:
   reporting_enabled: false

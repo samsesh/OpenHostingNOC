@@ -860,7 +860,10 @@ services:
           memory: ${OPENSEARCH_MEM:-8G}
     logging: *default-logging
     healthcheck:
-      <<: *healthcheck-start
+      start_period: 120s
+      interval: 15s
+      timeout: 10s
+      retries: 5
       test: ["CMD-SHELL", "curl -sk -u admin:admin https://localhost:9200/_cluster/health | grep -q '\"status\":\"green\"' || grep -q '\"status\":\"yellow\"'"]
 
   # -------------------------------------------------------------------------
