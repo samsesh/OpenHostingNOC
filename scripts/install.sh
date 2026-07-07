@@ -35,25 +35,42 @@ check_prereqs() {
         log_warn "Not running as root - Suricata/Fail2Ban installation skipped"
     fi
     
-    # Check Docker
-    if command -v docker &>/dev/null; then
-        DOCKER_VERSION=$(docker --version | cut -d' ' -f3 | tr -d ',')
-        log_info "Docker: $DOCKER_VERSION"
-    else
-        log_error "Docker is not installed. Please install Docker first."
-        log_info "  curl -fsSL https://get.docker.com | sh"
-        exit 1
+    # Check / Install Docker
+    if ! command -v docker &>/dev/null; then
+        log_info "Docker not found. Installing..."
+        if [[ $EUID -ne 0 ]]; then
+            log_error "Root privileges required to install Docker. Run as root or install manually."
+            log_info "  curl -fsSL https://get.docker.com | sh"
+            exit 1
+        fi
+        curl -fsSL https://get.docker.com | sh
+        log_info "Docker installed"
     fi
-    
-    # Check Docker Compose
-    if docker compose version &>/dev/null; then
-        COMPOSE_VERSION=$(docker compose version | cut -d' ' -f4)
-        log_info "Docker Compose: $COMPOSE_VERSION"
-    else
-        log_error "Docker Compose v2 is not installed."
-        log_info "  sudo apt-get install docker-compose-plugin"
-        exit 1
+    DOCKER_VERSION=$(docker --version | cut -d' ' -f3 | tr -d ',')
+    log_info "Docker: $DOCKER_VERSION"
+
+    # Check / Install Docker Compose
+    if ! docker compose version &>/dev/null; then
+        log_info "Docker Compose v2 not found. Installing..."
+        if [[ $EUID -ne 0 ]]; then
+            log_error "Root privileges required. Run as root or install manually."
+            log_info "  sudo apt-get install docker-compose-plugin"
+            exit 1
+        fi
+        if command -v apt-get &>/dev/null; then
+            apt-get update && apt-get install -y docker-compose-plugin
+        elif command -v dnf &>/dev/null; then
+            dnf install -y docker-compose-plugin
+        elif command -v yum &>/dev/null; then
+            yum install -y docker-compose-plugin
+        else
+            log_error "Unsupported package manager. Install docker-compose-plugin manually."
+            exit 1
+        fi
+        log_info "Docker Compose installed"
     fi
+    COMPOSE_VERSION=$(docker compose version | cut -d' ' -f4)
+    log_info "Docker Compose: $COMPOSE_VERSION"
     
     # Check .env file
     if [[ -f "${PROJECT_DIR}/.env" ]]; then
