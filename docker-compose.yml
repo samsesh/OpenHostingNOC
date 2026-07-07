@@ -438,16 +438,16 @@ services:
     environment:
       - TZ=${TIMEZONE:-UTC}
       - DOCKER_MODS=linuxserver/mods:universal-cron
-      - LIBRENMS_DB_HOST=mariadb
-      - LIBRENMS_DB_PORT=3306
-      - LIBRENMS_DB_NAME=${LIBRENMS_DB_NAME:-librenms}
-      - LIBRENMS_DB_USER=${LIBRENMS_DB_USER:-librenms}
-      - LIBRENMS_DB_PASSWORD=${LIBRENMS_DB_PASSWORD:-changeme}
-      - LIBRENMS_DB_TIMEOUT=600
-      - LIBRENMS_REDIS_HOST=redis
-      - LIBRENMS_REDIS_PORT=6379
-      - LIBRENMS_REDIS_DB=${LIBRENMS_REDIS_DB:-0}
-      - LIBRENMS_REDIS_PASSWORD=${REDIS_PASSWORD:-changeme}
+      - DB_HOST=mariadb
+      - DB_PORT=3306
+      - DB_NAME=${LIBRENMS_DB_NAME:-librenms}
+      - DB_USER=${LIBRENMS_DB_USER:-librenms}
+      - DB_PASSWORD=${LIBRENMS_DB_PASSWORD:-changeme}
+      - DB_TIMEOUT=600
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_DB=${LIBRENMS_REDIS_DB:-0}
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-changeme}
       - LIBRENMS_SNMP_COMMUNITY=${LIBRENMS_SNMP_COMMUNITY_V2C:-public}
       - LIBRENMS_POLLER_THREADS=${LIBRENMS_POLLER_THREADS:-16}
       - LIBRENMS_SERVICE_POLLER=${LIBRENMS_SERVICE_POLLER:-true}
@@ -464,7 +464,7 @@ services:
     logging: *default-logging
     healthcheck:
       <<: *healthcheck-start
-      test: ["CMD-SHELL", "curl -sf http://localhost:80/health || exit 1"]
+      test: ["CMD-SHELL", "curl -sf http://localhost:8000/health || exit 1"]
     labels:
       - traefik.enable=true
       - traefik.http.routers.librenms.entrypoints=websecure
@@ -472,7 +472,7 @@ services:
       - traefik.http.routers.librenms.tls=true
       - traefik.http.routers.librenms.tls.certresolver=letsencrypt
       - traefik.http.routers.librenms.middlewares=secHeaders@file,ratelimit@file
-      - traefik.http.services.librenms.loadbalancer.server.port=80
+      - traefik.http.services.librenms.loadbalancer.server.port=8000
       - traefik.http.routers.librenms.priority=10
     depends_on:
       mariadb:
@@ -495,25 +495,23 @@ services:
       - ./librenms/config/librenms.php:/opt/librenms/config.php:ro
     environment:
       - TZ=${TIMEZONE:-UTC}
-      - LIBRENMS_DB_HOST=mariadb
-      - LIBRENMS_DB_PORT=3306
-      - LIBRENMS_DB_NAME=${LIBRENMS_DB_NAME:-librenms}
-      - LIBRENMS_DB_USER=${LIBRENMS_DB_USER:-librenms}
-      - LIBRENMS_DB_PASSWORD=${LIBRENMS_DB_PASSWORD:-changeme}
-      - LIBRENMS_REDIS_HOST=redis
-      - LIBRENMS_REDIS_PORT=6379
-      - LIBRENMS_REDIS_DB=${LIBRENMS_REDIS_DB:-0}
-      - LIBRENMS_REDIS_PASSWORD=${REDIS_PASSWORD:-changeme}
+      - DB_HOST=mariadb
+      - DB_PORT=3306
+      - DB_NAME=${LIBRENMS_DB_NAME:-librenms}
+      - DB_USER=${LIBRENMS_DB_USER:-librenms}
+      - DB_PASSWORD=${LIBRENMS_DB_PASSWORD:-changeme}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_DB=${LIBRENMS_REDIS_DB:-0}
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-changeme}
+      - SIDECAR_DISPATCHER=1
+      - DISPATCHER_NODE_ID=scheduler1
     deploy:
       resources:
         limits:
           cpus: 1
           memory: 1G
     logging: *default-logging
-    command:
-      - /opt/librenms/librenms-service.py
-      - -s
-      - -t=${LIBRENMS_POLLER_THREADS:-16}
     depends_on:
       librenms:
         condition: service_healthy
