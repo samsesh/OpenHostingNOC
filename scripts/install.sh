@@ -350,6 +350,8 @@ main() {
     # Restore clean opensearch.yml so demo config always re-runs fresh
     cp "${PROJECT_DIR}/opensearch/config/opensearch.yml.example" \
        "${PROJECT_DIR}/opensearch/config/opensearch.yml" 2>/dev/null || true
+    # Demo config runs as non-root inside container; bind-mount preserves root ownership
+    chmod 666 "${PROJECT_DIR}/opensearch/config/opensearch.yml" 2>/dev/null || true
     pull_images
     start_stack
     dump_failed_logs
