@@ -846,6 +846,8 @@ services:
       - JAVA_OPTS=-Xms${OPENSEARCH_JVM_HEAP_SIZE:-4g} -Xmx${OPENSEARCH_JVM_HEAP_SIZE:-4g}
       - network.host=0.0.0.0
       - OPENSEARCH_JAVA_OPTS=-Xms${OPENSEARCH_JVM_HEAP_SIZE:-4g} -Xmx${OPENSEARCH_JVM_HEAP_SIZE:-4g}
+    cap_add:
+      - IPC_LOCK
     ulimits:
       memlock:
         soft: -1
