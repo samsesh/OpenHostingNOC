@@ -429,7 +429,7 @@ services:
   # LibreNMS - Network Monitoring System
   # -------------------------------------------------------------------------
   librenms:
-    image: librenms/librenms:26.6.0
+    image: librenms/librenms:latest
     <<: *restart-policy
     hostname: librenms
     networks:
@@ -496,7 +496,7 @@ services:
   # LibreNMS Scheduler - Distributed Polling Dispatcher
   # -------------------------------------------------------------------------
   librenms-scheduler:
-    image: librenms/librenms:26.6.0
+    image: librenms/librenms:latest
     <<: *restart-policy
     hostname: librenms-scheduler
     networks:
