@@ -139,7 +139,7 @@ create_dirs() {
     mkdir -p "${PROJECT_DIR}"/grafana/{dashboards/json,datasources,provisioning/{dashboards,datasources,notifiers,alerting},reports}
     mkdir -p "${PROJECT_DIR}"/librenms/{config,data,rrd,logs,oxidized}
     mkdir -p "${PROJECT_DIR}"/ntopng/{data,logs,GeoIP}
-    mkdir -p "${PROJECT_DIR}"/opensearch/{data,logs,backup,dashboards,config/security}
+    mkdir -p "${PROJECT_DIR}"/opensearch/{data,logs,backup,dashboards}
     mkdir -p "${PROJECT_DIR}"/loki/{data/{chunks,rules,index,cache,wal,compactor},config,backup}
     mkdir -p "${PROJECT_DIR}"/alertmanager/{data,templates}
     mkdir -p "${PROJECT_DIR}"/traefik/{config,dynamic}
@@ -263,26 +263,6 @@ install_fail2ban() {
     fi
 }
 
-# Generate OpenSearch TLS certificates
-setup_opensearch_certs() {
-    local cert_dir="${PROJECT_DIR}/opensearch/config/security"
-    if [[ -f "${cert_dir}/node.pem" ]]; then
-        log_info "OpenSearch certificates already exist"
-        return
-    fi
-    log_step "Generating OpenSearch TLS Certificates"
-    if ! command -v openssl &>/dev/null; then
-        log_error "openssl not found. Install it and re-run."
-        exit 1
-    fi
-    openssl req -x509 -sha256 -nodes -days 3650 -newkey rsa:4096 \
-        -keyout "${cert_dir}/node-key.pem" \
-        -out "${cert_dir}/node.pem" \
-        -subj "/C=XX/ST=State/L=City/O=OpenHostingNOC/OU=Security/CN=opensearch"
-    cp "${cert_dir}/node.pem" "${cert_dir}/root-ca.pem"
-    log_info "OpenSearch TLS certificates generated"
-}
-
 # Create htpasswd file for Traefik
 create_htpasswd() {
     log_step "Creating Traefik Auth Config"
@@ -372,7 +352,6 @@ main() {
     check_prereqs
     create_dirs
     create_htpasswd
-    setup_opensearch_certs
     pull_images
     start_stack
     dump_failed_logs

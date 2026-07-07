@@ -821,7 +821,7 @@ services:
   # OpenSearch - Security Events & Analytics Store
   # -------------------------------------------------------------------------
   opensearch:
-    image: opensearchproject/opensearch:2.19.5
+    image: opensearchproject/opensearch:2.9.0
     <<: *restart-policy
     hostname: opensearch
     networks:
@@ -833,15 +833,12 @@ services:
       - opensearch_data:/usr/share/opensearch/data
       - opensearch_backup:/usr/share/opensearch/backup
       - ./opensearch/config/opensearch.yml:/usr/share/opensearch/config/opensearch.yml:ro
-      - ./opensearch/config/security:/usr/share/opensearch/config/opensearch-security:ro
     environment:
       - TZ=${TIMEZONE:-UTC}
       - cluster.name=${OPENSEARCH_CLUSTER_NAME:-opennoc-opensearch}
       - node.name=${OPENSEARCH_NODE_NAME:-opennoc-os-1}
-      - OPENSEARCH_INITIAL_ADMIN_PASSWORD=${OPENSEARCH_INITIAL_ADMIN_PASSWORD:-changeme}
       - DISCOVERY_TYPE=${OPENSEARCH_DISCOVERY_TYPE:-single-node}
       - DISABLE_SECURITY_PLUGIN=false
-      - DISABLE_INSTALL_DEMO_CONFIG=true
       - bootstrap.memory_lock=${OPENSEARCH_BOOTSTRAP_MEMORY_LOCK:-true}
       - JAVA_OPTS=-Xms${OPENSEARCH_JVM_HEAP_SIZE:-4g} -Xmx${OPENSEARCH_JVM_HEAP_SIZE:-4g}
       - network.host=0.0.0.0
@@ -863,13 +860,13 @@ services:
     logging: *default-logging
     healthcheck:
       <<: *healthcheck-start
-      test: ["CMD-SHELL", "curl -sk -u admin:${OPENSEARCH_INITIAL_ADMIN_PASSWORD:-changeme} https://localhost:9200/_cluster/health | grep -q '\"status\":\"green\"' || grep -q '\"status\":\"yellow\"'"]
+      test: ["CMD-SHELL", "curl -sk -u admin:admin https://localhost:9200/_cluster/health | grep -q '\"status\":\"green\"' || grep -q '\"status\":\"yellow\"'"]
 
   # -------------------------------------------------------------------------
   # OpenSearch Dashboards - Visualization for OpenSearch
   # -------------------------------------------------------------------------
   opensearch-dashboards:
-    image: opensearchproject/opensearch-dashboards:2.19.5
+    image: opensearchproject/opensearch-dashboards:2.9.0
     <<: *restart-policy
     hostname: opensearch-dashboards
     networks:
@@ -882,7 +879,7 @@ services:
       - TZ=${TIMEZONE:-UTC}
       - OPENSEARCH_HOSTS=https://opensearch:9200
       - OPENSEARCH_USERNAME=admin
-      - OPENSEARCH_PASSWORD=${OPENSEARCH_INITIAL_ADMIN_PASSWORD:-changeme}
+      - OPENSEARCH_PASSWORD=admin
     deploy:
       resources:
         limits:
