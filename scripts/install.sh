@@ -213,15 +213,27 @@ install_fail2ban() {
 # Create htpasswd file for Traefik
 create_htpasswd() {
     log_step "Creating Traefik Auth Config"
-    
-    if [[ ! -f "${PROJECT_DIR}/traefik/config/users.htpasswd" ]]; then
-        if command -v htpasswd &>/dev/null; then
-            htpasswd -c "${PROJECT_DIR}/traefik/config/users.htpasswd" admin
+
+    if ! command -v htpasswd &>/dev/null; then
+        log_info "Installing htpasswd..."
+        if command -v apt-get &>/dev/null; then
+            apt-get install -y apache2-utils
+        elif command -v yum &>/dev/null; then
+            yum install -y httpd-tools
+        elif command -v dnf &>/dev/null; then
+            dnf install -y httpd-tools
+        elif command -v zypper &>/dev/null; then
+            zypper install -y apache2-utils
+        elif command -v pacman &>/dev/null; then
+            pacman -S --noconfirm apache2-utils
         else
-            log_warn "htpasswd not found. Install apache2-utils or httpd-tools."
-            log_warn "  sudo apt-get install apache2-utils"
-            log_warn "Then run: htpasswd -c traefik/config/users.htpasswd admin"
+            log_error "No package manager found. Install apache2-utils or httpd-tools manually."
+            exit 1
         fi
+    fi
+
+    if [[ ! -f "${PROJECT_DIR}/traefik/config/users.htpasswd" ]]; then
+        htpasswd -c "${PROJECT_DIR}/traefik/config/users.htpasswd" admin
     else
         log_info "htpasswd file already exists"
     fi
