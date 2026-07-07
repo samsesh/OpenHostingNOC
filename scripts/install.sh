@@ -348,6 +348,8 @@ main() {
     check_prereqs
     create_dirs
     create_htpasswd
+    # Strip any previously-added security settings so demo config re-runs fresh
+    sed -i '/^plugins\.security\./d' "${PROJECT_DIR}/opensearch/config/opensearch.yml" 2>/dev/null || true
     pull_images
     start_stack
     dump_failed_logs
