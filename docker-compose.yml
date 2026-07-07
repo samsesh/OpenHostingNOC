@@ -359,8 +359,6 @@ services:
       - --innodb_flush_log_at_trx_commit=2
       - --max_connections=${MARIADB_MAX_CONNECTIONS:-150}
       - --thread_cache_size=32
-      - --query_cache_size=0
-      - --query_cache_type=0
       - --tmp_table_size=${MARIADB_TMP_TABLE_SIZE:-32M}
       - --max_heap_table_size=${MARIADB_TMP_TABLE_SIZE:-32M}
       - --table_open_cache=512
