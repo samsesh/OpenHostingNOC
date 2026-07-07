@@ -851,11 +851,11 @@ services:
           memory: ${OPENSEARCH_MEM:-8G}
     logging: *default-logging
     healthcheck:
-      start_period: 120s
+      start_period: 180s
       interval: 15s
       timeout: 10s
-      retries: 5
-      test: ["CMD-SHELL", "curl -sk -u admin:admin https://localhost:9200/_cluster/health | grep -q '\"status\":\"green\"' || grep -q '\"status\":\"yellow\"'"]
+      retries: 10
+      test: ["CMD-SHELL", "curl -sk -u admin:admin https://localhost:9200/_cluster/health | grep -qE '\"status\":\"(green|yellow)\"'"]
 
   # -------------------------------------------------------------------------
   # OpenSearch Dashboards - Visualization for OpenSearch

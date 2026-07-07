@@ -4,18 +4,18 @@
 // =============================================================================
 
 // Database
-$config['db_host'] = getenv('LIBRENMS_DB_HOST') ?: 'mariadb';
-$config['db_port'] = getenv('LIBRENMS_DB_PORT') ?: '3306';
-$config['db_name'] = getenv('LIBRENMS_DB_NAME') ?: 'librenms';
-$config['db_user'] = getenv('LIBRENMS_DB_USER') ?: 'librenms';
-$config['db_pass'] = getenv('LIBRENMS_DB_PASSWORD') ?: 'changeme';
+$config['db_host'] = getenv('DB_HOST') ?: 'mariadb';
+$config['db_port'] = getenv('DB_PORT') ?: '3306';
+$config['db_name'] = getenv('DB_NAME') ?: 'librenms';
+$config['db_user'] = getenv('DB_USER') ?: 'librenms';
+$config['db_pass'] = getenv('DB_PASSWORD') ?: 'changeme';
 $config['db_socket'] = '';
 
 // Redis
-$config['redis']['host'] = getenv('LIBRENMS_REDIS_HOST') ?: 'redis';
-$config['redis']['port'] = getenv('LIBRENMS_REDIS_PORT') ?: 6379;
-$config['redis']['db'] = getenv('LIBRENMS_REDIS_DB') ?: 0;
-$config['redis']['password'] = getenv('LIBRENMS_REDIS_PASSWORD') ?: '';
+$config['redis']['host'] = getenv('REDIS_HOST') ?: 'redis';
+$config['redis']['port'] = getenv('REDIS_PORT') ?: 6379;
+$config['redis']['db'] = getenv('REDIS_DB') ?: 0;
+$config['redis']['password'] = getenv('REDIS_PASSWORD') ?: '';
 $config['redis']['timeout'] = 2.5;
 $config['redis']['persistent'] = false;
 
@@ -55,7 +55,7 @@ $config['snmp']['mode'] = 'ipv4';
 
 // Polling & Discovery
 $config['discovery_on_poller'] = true;
-$config['update_mechanism'] = env('LIBRENMS_UPDATE_MECHANISM') ?: 'git';
+$config['update_mechanism'] = getenv('LIBRENMS_UPDATE_MECHANISM') ?: 'git';
 $config['autofix_enabled'] = true;
 $config['poller_modules']['os'] = true;
 $config['poller_modules']['bgp-asn'] = true;
@@ -65,7 +65,7 @@ $config['poller_modules']['mpls'] = true;
 $config['poller_modules']['ospf'] = true;
 $config['poller_modules']['stp'] = true;
 $config['poller_modules']['wireless'] = true;
-$config['poller_modules]['fdb-table'] = true;
+$config['poller_modules']['fdb-table'] = true;
 $config['poller_modules']['wifi'] = true;
 
 // Discovery modules
