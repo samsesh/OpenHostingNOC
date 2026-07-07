@@ -242,7 +242,7 @@ setup_opensearch_certs() {
     openssl req -x509 -sha256 -nodes -days 3650 -newkey rsa:4096 \
         -keyout "${cert_dir}/node-key.pem" \
         -out "${cert_dir}/node.pem" \
-        -subj "/C=Country/ST=State/L=City/O=OpenHostingNOC/OU=Security/CN=opensearch"
+        -subj "/C=XX/ST=State/L=City/O=OpenHostingNOC/OU=Security/CN=opensearch"
     cp "${cert_dir}/node.pem" "${cert_dir}/root-ca.pem"
     log_info "OpenSearch TLS certificates generated"
 }
