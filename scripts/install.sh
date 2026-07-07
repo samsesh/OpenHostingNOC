@@ -135,6 +135,7 @@ create_dirs() {
     mkdir -p "${PROJECT_DIR}"/librenms/{config,data,rrd,logs,oxidized}
     mkdir -p "${PROJECT_DIR}"/ntopng/{data,logs,GeoIP}
     mkdir -p "${PROJECT_DIR}"/opensearch/{data,logs,backup,dashboards}
+    chown 1000:1000 "${PROJECT_DIR}/opensearch/config/opensearch.yml" 2>/dev/null || true
     mkdir -p "${PROJECT_DIR}"/loki/{data/{chunks,rules,index,cache,wal,compactor},config,backup}
     mkdir -p "${PROJECT_DIR}"/alertmanager/{data,templates}
     mkdir -p "${PROJECT_DIR}"/traefik/{config,dynamic}
