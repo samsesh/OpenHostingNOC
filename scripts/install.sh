@@ -9,6 +9,8 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
+LOG_DIR="${PROJECT_DIR}/logs"
+LOG_FILE="${LOG_DIR}/install-$(date +%Y%m%d-%H%M%S).log"
 
 # Colors
 RED='\033[0;31m'
@@ -21,6 +23,40 @@ log_info()  { echo -e "${GREEN}[INFO]${NC} $1"; }
 log_warn()  { echo -e "${YELLOW}[WARN]${NC} $1"; }
 log_error() { echo -e "${RED}[ERROR]${NC} $1"; }
 log_step()  { echo -e "\n${CYAN}════════════════════════════════════════════${NC}"; echo -e "${CYAN}  $1${NC}"; echo -e "${CYAN}════════════════════════════════════════════${NC}"; }
+
+# Setup logging — tee all output to log file
+setup_logging() {
+    mkdir -p "${LOG_DIR}"
+    exec > >(tee -a "${LOG_FILE}") 2>&1
+    log_info "Installation log: ${LOG_FILE}"
+}
+
+# Dump container logs for any failed services (details only to log file)
+dump_failed_logs() {
+    local failed=()
+    while IFS= read -r line; do
+        failed+=("$line")
+    done < <(docker compose $(compose_files) ps --all 2>/dev/null | awk 'NR>1 && ($4 ~ /^Exit/ || $4 ~ /^Unhealthy/) {print $1}')
+    
+    if [[ ${#failed[@]} -gt 0 ]]; then
+        log_warn "The following containers failed: ${failed[*]}"
+        {
+            for container in "${failed[@]}"; do
+                local svc
+                svc=$(echo "$container" | sed 's/^opennoc-\(.*\)-[0-9]\+$/\1/')
+                echo ""
+                echo "--- Container logs for ${svc} (last 50 lines) ---"
+                docker compose $(compose_files) logs --tail=50 "$svc" 2>/dev/null || \
+                    docker logs "$container" --tail 50 2>/dev/null || true
+                echo "--- End of ${svc} logs ---"
+            done
+        } >> "${LOG_FILE}"
+        log_warn "Container logs saved to ${LOG_FILE}"
+        for container in "${failed[@]}"; do
+            log_warn "  ${container} — run 'docker compose logs ${container#opennoc-}' to inspect"
+        done
+    fi
+}
 
 # Check prerequisites
 check_prereqs() {
@@ -331,13 +367,17 @@ main() {
     echo "╚══════════════════════════════════════════════════════════════════╝"
     echo ""
     
+    setup_logging
+    trap 'dump_failed_logs' EXIT
     check_prereqs
     create_dirs
     create_htpasswd
     setup_opensearch_certs
     pull_images
     start_stack
+    dump_failed_logs
     wait_for_services
+    dump_failed_logs
     init_librenms
     install_suricata
     install_fail2ban
