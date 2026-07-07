@@ -656,7 +656,7 @@ services:
       monitoring_net:
     volumes:
       - alertmanager_data:/alertmanager
-      - ./alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+      - ./alertmanager/alertmanager.yml.generated:/etc/alertmanager/alertmanager.yml:ro
       - ./alertmanager/templates:/etc/alertmanager/templates:ro
     environment:
       - TZ=${TIMEZONE:-UTC}
@@ -770,7 +770,7 @@ services:
       interval: 15s
       timeout: 10s
       retries: 5
-      test: ["CMD-SHELL", "wget -qO- http://localhost:3100/ready || exit 1"]
+      test: ["CMD-SHELL", "curl -sf http://localhost:3100/ready || exit 1"]
     labels:
       - traefik.enable=true
       - traefik.http.routers.loki.entrypoints=websecure

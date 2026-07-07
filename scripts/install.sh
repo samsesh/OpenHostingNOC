@@ -125,6 +125,50 @@ check_prereqs() {
     set -a; source "${PROJECT_DIR}/.env"; set +a
 }
 
+# Render config templates with environment variable substitution
+render_config_templates() {
+    log_step "Rendering Configuration Templates"
+
+    if ! command -v envsubst &>/dev/null; then
+        log_warn "envsubst not found. Installing gettext-base..."
+        if [[ -x /usr/bin/apt-get ]]; then
+            apt-get update -qq && apt-get install -y -qq gettext-base
+        elif [[ -x /usr/bin/yum ]]; then
+            yum install -y gettext
+        elif [[ -x /usr/bin/dnf ]]; then
+            dnf install -y gettext
+        elif [[ -x /usr/bin/zypper ]]; then
+            zypper install -y gettext-tools
+        elif [[ -x /usr/bin/pacman ]]; then
+            pacman -Sy --noconfirm gettext
+        else
+            log_error "envsubst could not be installed. Install gettext/base and re-run."
+            exit 1
+        fi
+    fi
+
+    # Set valid default alerting values if not configured (allows alertmanager to start)
+    export TELEGRAM_BOT_TOKEN="${TELEGRAM_BOT_TOKEN:-123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11}"
+    export TELEGRAM_CHAT_ID_WARNING="${TELEGRAM_CHAT_ID_WARNING:-0}"
+    export TELEGRAM_CHAT_ID_CRITICAL="${TELEGRAM_CHAT_ID_CRITICAL:-0}"
+    export TELEGRAM_CHAT_ID_EMERGENCY="${TELEGRAM_CHAT_ID_EMERGENCY:-0}"
+    export DISCORD_WEBHOOK_URL="${DISCORD_WEBHOOK_URL:-https://example.com/discord-webhook}"
+    export SLACK_API_URL="${SLACK_API_URL:-https://hooks.slack.com/services/T00/B00/xxxxx}"
+    export WEBHOOK_URL="${WEBHOOK_URL:-https://example.com/alerts-webhook}"
+    export PAGERDUTY_ROUTING_KEY="${PAGERDUTY_ROUTING_KEY:-changeme}"
+    export SMTP_SMARTHOST="${SMTP_SMARTHOST:-localhost:25}"
+    export SMTP_USERNAME="${SMTP_USERNAME:-alertmanager}"
+    export SMTP_PASSWORD="${SMTP_PASSWORD:-changeme}"
+    export SMTP_FROM="${SMTP_FROM:-alertmanager@example.com}"
+    export SMTP_TO="${SMTP_TO:-ops@example.com}"
+
+    # Render Alertmanager config (alertmanager does not expand env vars natively)
+    envsubst < "${PROJECT_DIR}/alertmanager/alertmanager.yml" \
+        > "${PROJECT_DIR}/alertmanager/alertmanager.yml.generated"
+
+    log_info "Configuration templates rendered"
+}
+
 # Create required directories
 create_dirs() {
     log_step "Creating Directory Structure"
@@ -347,6 +391,7 @@ main() {
     check_prereqs
     create_dirs
     create_htpasswd
+    render_config_templates
     # Restore clean opensearch.yml so demo config always re-runs fresh
     cp "${PROJECT_DIR}/opensearch/config/opensearch.yml.example" \
        "${PROJECT_DIR}/opensearch/config/opensearch.yml" 2>/dev/null || true
