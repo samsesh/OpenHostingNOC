@@ -50,4 +50,4 @@ cluster.info.update.interval: 30s
 # NOTE: slow log levels must be set per-index, not here.
 
 # Monitoring
-monitoring.collection.enabled: true
+# NOTE: monitoring.collection.enabled is not a valid setting in OpenSearch 2.9.0.
