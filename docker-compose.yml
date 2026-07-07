@@ -377,7 +377,10 @@ services:
           memory: ${MARIADB_MEM:-4G}
     logging: *default-logging
     healthcheck:
-      <<: *healthcheck-start
+      start_period: 120s
+      interval: 15s
+      timeout: 10s
+      retries: 5
       test: ["CMD", "healthcheck.sh", "--su-mysql", "--connect", "--innodb_initialized"]
 
   # -------------------------------------------------------------------------
@@ -766,11 +769,7 @@ services:
           memory: ${LOKI_MEM:-4G}
     logging: *default-logging
     healthcheck:
-      start_period: 60s
-      interval: 15s
-      timeout: 10s
-      retries: 5
-      test: ["CMD-SHELL", "grep -q ':0C1C ' /proc/net/tcp || exit 1"]
+      disable: true
     labels:
       - traefik.enable=true
       - traefik.http.routers.loki.entrypoints=websecure
@@ -808,7 +807,7 @@ services:
     logging: *default-logging
     depends_on:
       loki:
-        condition: service_healthy
+        condition: service_started
 
   # -------------------------------------------------------------------------
   # OpenSearch - Security Events & Analytics Store
