@@ -381,8 +381,6 @@ services:
         limits:
           cpus: ${MARIADB_CPU:-2}
           memory: ${MARIADB_MEM:-4G}
-        reservations:
-          memory: ${MARIADB_MEM_RESERVATION:-2G}
     logging: *default-logging
     healthcheck:
       <<: *healthcheck-start
@@ -471,8 +469,6 @@ services:
         limits:
           cpus: ${LIBRENMS_CPU:-2}
           memory: ${LIBRENMS_MEM:-2G}
-        reservations:
-          memory: ${LIBRENMS_MEM_RESERVATION:-1G}
     logging: *default-logging
     healthcheck:
       <<: *healthcheck-start
@@ -588,8 +584,6 @@ services:
         limits:
           cpus: ${NTOPNG_CPU:-4}
           memory: ${NTOPNG_MEM:-8G}
-        reservations:
-          memory: ${NTOPNG_MEM_RESERVATION:-4G}
     logging: *default-logging
     healthcheck:
       <<: *healthcheck-start
@@ -647,8 +641,6 @@ services:
         limits:
           cpus: ${PROMETHEUS_CPU:-2}
           memory: ${PROMETHEUS_MEM:-4G}
-        reservations:
-          memory: ${PROMETHEUS_MEM_RESERVATION:-2G}
     logging: *default-logging
     healthcheck:
       <<: *healthcheck-start
@@ -782,8 +774,6 @@ services:
         limits:
           cpus: ${LOKI_CPU:-2}
           memory: ${LOKI_MEM:-4G}
-        reservations:
-          memory: ${LOKI_MEM_RESERVATION:-2G}
     logging: *default-logging
     healthcheck:
       <<: *healthcheck-start
@@ -868,8 +858,6 @@ services:
         limits:
           cpus: ${OPENSEARCH_CPU:-4}
           memory: ${OPENSEARCH_MEM:-8G}
-        reservations:
-          memory: ${OPENSEARCH_MEM_RESERVATION:-4G}
     logging: *default-logging
     healthcheck:
       <<: *healthcheck-start
