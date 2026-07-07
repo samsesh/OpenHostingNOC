@@ -45,28 +45,7 @@ index.search.slowlog.threshold.query.warn: 10s
 index.search.slowlog.threshold.fetch.warn: 5s
 index.indexing.slowlog.threshold.index.warn: 10s
 
-# Security
-plugins.security.allow_default_init_securityindex: true
-plugins.security.ssl.http.enabled: true
-plugins.security.ssl.http.pemcert_filepath: /usr/share/opensearch/config/opensearch-security/node.pem
-plugins.security.ssl.http.pemkey_filepath: /usr/share/opensearch/config/opensearch-security/node-key.pem
-plugins.security.ssl.http.pemtrustedcas_filepath: /usr/share/opensearch/config/opensearch-security/root-ca.pem
-plugins.security.ssl.transport.enabled: true
-plugins.security.ssl.transport.pemcert_filepath: /usr/share/opensearch/config/opensearch-security/node.pem
-plugins.security.ssl.transport.pemkey_filepath: /usr/share/opensearch/config/opensearch-security/node-key.pem
-plugins.security.ssl.transport.pemtrustedcas_filepath: /usr/share/opensearch/config/opensearch-security/root-ca.pem
-plugins.security.ssl.transport.enforce_hostname_verification: false
-plugins.security.authcz.admin_dn:
-  - CN=admin,OU=OpenHostingNOC,O=OpenHostingNOC,L=City,C=Country
-plugins.security.enable_snapshot_restore_privilege: true
-plugins.security.check_snapshot_restore_write_privileges: true
-plugins.security.restapi.roles_enabled: ["all_access", "security_rest_api_access"]
-
-# Compatibility
-compatibility.override_main_response_version: true
-
 # Performance
-opensearch.experimental.feature.telemetry.metrics.enabled: true
 cluster.routing.allocation.disk.threshold_enabled: true
 cluster.routing.allocation.disk.watermark.low: 85%
 cluster.routing.allocation.disk.watermark.high: 90%

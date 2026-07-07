@@ -635,7 +635,7 @@ services:
       - --query.timeout=2m
       - --query.max-concurrency=20
       - --query.max-samples=50000000
-      - --enable-feature=exemplar-storage,otlp-write-receiver,auto-gomemlimit
+      - --enable-feature=exemplar-storage
     deploy:
       resources:
         limits:
@@ -768,6 +768,7 @@ services:
       - TZ=${TIMEZONE:-UTC}
     command:
       - -config.file=/etc/loki/loki.yml
+      - -config.expand-env=true
       - -log.level=${LOG_LEVEL:-info}
     deploy:
       resources:
@@ -832,7 +833,7 @@ services:
     volumes:
       - opensearch_data:/usr/share/opensearch/data
       - opensearch_backup:/usr/share/opensearch/backup
-      - ./opensearch/config/opensearch.yml:/usr/share/opensearch/config/opensearch.yml:ro
+      - ./opensearch/config/opensearch.yml:/usr/share/opensearch/config/opensearch.yml
     environment:
       - TZ=${TIMEZONE:-UTC}
       - cluster.name=${OPENSEARCH_CLUSTER_NAME:-opennoc-opensearch}

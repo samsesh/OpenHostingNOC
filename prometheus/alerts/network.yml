@@ -80,7 +80,7 @@ groups:
           category: network
         annotations:
           summary: "SSL certificate expiring for {{ $labels.instance }}"
-          description: "Certificate for {{ $labels.instance }} expires in {{ printf \"%.0f\" (($value - time()) / 86400) }} days."
+          description: "Certificate for {{ $labels.instance }} expires in {{ $value | humanizeDuration }}."
 
       - alert: HTTPCertificateWarning
         expr: probe_ssl_earliest_cert_expiry{job="blackbox-http"} - time() < 86400 * 14
@@ -90,7 +90,7 @@ groups:
           category: network
         annotations:
           summary: "SSL certificate expiring soon for {{ $labels.instance }}"
-          description: "Certificate for {{ $labels.instance }} expires in {{ printf \"%.0f\" (($value - time()) / 86400) }} days."
+          description: "Certificate for {{ $labels.instance }} expires in {{ $value | humanizeDuration }}."
 
       # ---- TCP Port Check ----
       - alert: TCPPortUnreachable
