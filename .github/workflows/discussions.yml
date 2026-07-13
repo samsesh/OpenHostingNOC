@@ -1,0 +1,221 @@
+name: Discussions
+
+on:
+  push:
+    tags:
+      - 'v*'
+  schedule:
+    - cron: '0 9 * * 1'
+  workflow_run:
+    workflows: [Tests]
+    types: [completed]
+    branches: [main]
+
+permissions:
+  contents: read
+  discussions: write
+
+env:
+  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  OWNER: samsesh
+  REPO: OpenHostingNOC
+
+jobs:
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Get repo & category IDs
+        id: ids
+        run: |
+          REPO_ID=$(gh api graphql -f query='
+            { repository(owner:"'"$OWNER"'", name:"'"$REPO"'") { id } }
+          ' --jq '.data.repository.id')
+          CAT_ID=$(gh api graphql -f query='
+            { repository(owner:"'"$OWNER"'", name:"'"$REPO"'") {
+              discussionCategories(first:10) {
+                nodes { id name }
+              }
+            } }
+          ' --jq '.data.repository.discussionCategories[] | select(.name == "Announcements") | .id')
+          echo "repo_id=$REPO_ID" >> "$GITHUB_OUTPUT"
+          echo "cat_id=$CAT_ID" >> "$GITHUB_OUTPUT"
+      - name: Generate release notes
+        id: notes
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          PREV_TAG=$(git describe --tags --abbrev=0 "${TAG}^" 2>/dev/null || echo "")
+          if [ -n "$PREV_TAG" ]; then
+            LOG=$(git log --oneline --no-decorate "${PREV_TAG}..${TAG}")
+          else
+            LOG=$(git log --oneline --no-decorate "${TAG}" | head -50)
+          fi
+          BODY=$(cat <<EOF
+          ## Release ${TAG}
+
+          **Released:** $(date -u +%Y-%m-%d)
+
+          ### Changes since ${PREV_TAG:-the beginning}
+
+          \`\`\`
+          ${LOG}
+          \`\`\`
+
+          **Full Changelog:** https://github.com/${OWNER}/${REPO}/compare/${PREV_TAG:-$(git rev-list --max-parents=0 HEAD)}...${TAG}
+          EOF
+          )
+          echo "body<<DELIM" >> "$GITHUB_OUTPUT"
+          echo "$BODY" >> "$GITHUB_OUTPUT"
+          echo "DELIM" >> "$GITHUB_OUTPUT"
+      - name: Create discussion
+        run: |
+          gh api graphql -f query='
+            mutation($repo: ID!, $cat: ID!, $title: String!, $body: String!) {
+              createDiscussion(input: {
+                repositoryId: $repo, categoryId: $cat,
+                title: $title, body: $body
+              }) { discussion { url } }
+            }' \
+            -f repo="${{ steps.ids.outputs.repo_id }}" \
+            -f cat="${{ steps.ids.outputs.cat_id }}" \
+            -f title="Release ${{ github.ref_name }}" \
+            -f body="${{ steps.notes.outputs.body }}"
+
+  weekly_status:
+    if: github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      discussions: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 50
+      - name: Get repo & category IDs
+        id: ids
+        run: |
+          REPO_ID=$(gh api graphql -f query='
+            { repository(owner:"'"$OWNER"'", name:"'"$REPO"'") { id } }
+          ' --jq '.data.repository.id')
+          CAT_ID=$(gh api graphql -f query='
+            { repository(owner:"'"$OWNER"'", name:"'"$REPO"'") {
+              discussionCategories(first:10) {
+                nodes { id name }
+              }
+            } }
+          ' --jq '.data.repository.discussionCategories[] | select(.name == "General") | .id')
+          echo "repo_id=$REPO_ID" >> "$GITHUB_OUTPUT"
+          echo "cat_id=$CAT_ID" >> "$GITHUB_OUTPUT"
+      - name: Build weekly summary
+        id: summary
+        run: |
+          COMMITS=$(git log --oneline --since="7 days ago" 2>/dev/null | wc -l)
+          CONTRIBUTORS=$(git log --since="7 days ago" --format="%an" 2>/dev/null | sort -u | wc -l)
+          ISSUES=$(gh issue list --state open --json number --jq 'length')
+          DISCUSSIONS=$(gh api "/repos/${OWNER}/${REPO}/discussions" --jq 'length' 2>/dev/null || echo "N/A")
+          DATE=$(date -u +%Y-%m-%d)
+          BODY=$(cat <<EOF
+          ## Weekly Status — ${DATE}
+
+          ### Activity (last 7 days)
+          - **Commits:** ${COMMITS}
+          - **Contributors:** ${CONTRIBUTORS}
+          - **Open Issues:** ${ISSUES}
+          - **Discussions:** ${DISCUSSIONS}
+
+          ### Recent Commits
+          \`\`\`
+          $(git log --oneline --since="7 days ago" 2>/dev/null || echo "No commits this week")
+          \`\`\`
+
+          **Repository:** https://github.com/${OWNER}/${REPO}
+          EOF
+          )
+          echo "body<<DELIM" >> "$GITHUB_OUTPUT"
+          echo "$BODY" >> "$GITHUB_OUTPUT"
+          echo "DELIM" >> "$GITHUB_OUTPUT"
+      - name: Create discussion
+        run: |
+          gh api graphql -f query='
+            mutation($repo: ID!, $cat: ID!, $title: String!, $body: String!) {
+              createDiscussion(input: {
+                repositoryId: $repo, categoryId: $cat,
+                title: $title, body: $body
+              }) { discussion { url } }
+            }' \
+            -f repo="${{ steps.ids.outputs.repo_id }}" \
+            -f cat="${{ steps.ids.outputs.cat_id }}" \
+            -f title="Weekly Status — $(date -u +%Y-%m-%d)" \
+            -f body="${{ steps.summary.outputs.body }}"
+
+  test_summary:
+    if: github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'failure'
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      discussions: write
+    steps:
+      - name: Get repo & category IDs
+        id: ids
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          REPO_ID=$(gh api graphql -f query='
+            { repository(owner:"'"$OWNER"'", name:"'"$REPO"'") { id } }
+          ' --jq '.data.repository.id')
+          CAT_ID=$(gh api graphql -f query='
+            { repository(owner:"'"$OWNER"'", name:"'"$REPO"'") {
+              discussionCategories(first:10) {
+                nodes { id name }
+              }
+            } }
+          ' --jq '.data.repository.discussionCategories[] | select(.name == "General") | .id')
+          echo "repo_id=$REPO_ID" >> "$GITHUB_OUTPUT"
+          echo "cat_id=$CAT_ID" >> "$GITHUB_OUTPUT"
+      - name: Fetch workflow run details
+        id: run
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          RUN_ID="${{ github.event.workflow_run.id }}"
+          CONCLUSION="${{ github.event.workflow_run.conclusion }}"
+          URL="${{ github.event.workflow_run.html_url }}"
+          BRANCH="${{ github.event.workflow_run.head_branch }}"
+          COMMIT="${{ github.event.workflow_run.head_commit.message }}"
+          DATE=$(date -u +%Y-%m-%d)
+          BODY=$(cat <<EOF
+          ## ❌ Tests Failed
+
+          **Workflow:** Tests
+          **Branch:** ${BRANCH}
+          **Commit:** ${COMMIT}
+          **Run ID:** ${RUN_ID}
+          **Conclusion:** ${CONCLUSION}
+          **Date:** ${DATE}
+
+          **Details:** [View Run](${URL})
+
+          Please investigate and fix the failing tests.
+          EOF
+          )
+          echo "body<<DELIM" >> "$GITHUB_OUTPUT"
+          echo "$BODY" >> "$GITHUB_OUTPUT"
+          echo "DELIM" >> "$GITHUB_OUTPUT"
+      - name: Create discussion
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh api graphql -f query='
+            mutation($repo: ID!, $cat: ID!, $title: String!, $body: String!) {
+              createDiscussion(input: {
+                repositoryId: $repo, categoryId: $cat,
+                title: $title, body: $body
+              }) { discussion { url } }
+            }' \
+            -f repo="${{ steps.ids.outputs.repo_id }}" \
+            -f cat="${{ steps.ids.outputs.cat_id }}" \
+            -f title="Test Failure — $(date -u +%Y-%m-%d)" \
+            -f body="${{ steps.run.outputs.body }}"
