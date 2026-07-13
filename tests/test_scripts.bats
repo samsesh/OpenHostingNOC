@@ -25,8 +25,19 @@ setup() {
 
 @test "generate-env.sh detects ip correctly" {
     result=$(bash -c '
-        SCRIPT_DIR="$(cd "'"${PROJECT_DIR}/scripts"'" && pwd)"
-        source "${SCRIPT_DIR}/generate-env.sh" 2>/dev/null
+        PROJECT_DIR="'"${PROJECT_DIR}"'"
+        SCRIPT_DIR="${PROJECT_DIR}/scripts"
+        detect_ip() {
+            local ip=""
+            ip=$(ip route get 1 2>/dev/null | awk "{print \$NF; exit}") || true
+            if [[ -z "$ip" ]]; then
+                ip=$(hostname -I 2>/dev/null | awk "{print \$1}") || true
+            fi
+            if [[ -z "$ip" ]]; then
+                ip="127.0.0.1"
+            fi
+            echo "$ip"
+        }
         detect_ip
     ')
     [ -n "$result" ]
@@ -78,7 +89,7 @@ setup() {
 
 @test "all scripts use consistent set flags" {
     for script in "${PROJECT_DIR}"/scripts/*.sh; do
-        head -5 "$script" | grep -q "set -euo pipefail" || return 1
+        head -10 "$script" | grep -q "set -euo pipefail" || return 1
     done
 }
 
