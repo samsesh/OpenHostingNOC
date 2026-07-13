@@ -29,6 +29,7 @@ fi
 
 # Detect OS
 if [[ -f /etc/os-release ]]; then
+    # shellcheck source=/dev/null
     . /etc/os-release
     OS=$ID
     VERSION=$VERSION_ID

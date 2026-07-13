@@ -20,7 +20,7 @@ jobs:
 
       - name: Install BATS
         run: |
-          npm install -g bats
+          sudo npm install -g bats
           bats --version
 
       - name: Run config tests
