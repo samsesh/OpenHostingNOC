@@ -7,6 +7,8 @@
 
 set -euo pipefail
 
+# shellcheck disable=SC2154,SC1091
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 LOG_DIR="${PROJECT_DIR}/logs"
@@ -37,7 +39,7 @@ dump_failed_logs() {
     while IFS= read -r line; do
         failed+=("$line")
     done < <(docker compose $(compose_files) ps --all 2>/dev/null | awk 'NR>1 && ($4 ~ /^Exit/ || $4 ~ /^Unhealthy/) {print $1}')
-    
+
     if [[ ${#failed[@]} -gt 0 ]]; then
         log_warn "The following containers failed: ${failed[*]}"
         for container in "${failed[@]}"; do
@@ -56,7 +58,7 @@ dump_failed_logs() {
 # Check prerequisites
 check_prereqs() {
     log_step "Checking Prerequisites"
-    
+
     # Check if running as root for Suricata/Fail2Ban
     if [[ $EUID -eq 0 ]]; then
         HAS_ROOT=true
@@ -65,7 +67,7 @@ check_prereqs() {
         HAS_ROOT=false
         log_warn "Not running as root - Suricata/Fail2Ban installation skipped"
     fi
-    
+
     # Check / Install Docker
     if ! command -v docker &>/dev/null; then
         log_info "Docker not found. Installing..."
@@ -102,7 +104,7 @@ check_prereqs() {
     fi
     COMPOSE_VERSION=$(docker compose version | cut -d' ' -f4)
     log_info "Docker Compose: $COMPOSE_VERSION"
-    
+
     # Check .env file
     if [[ -f "${PROJECT_DIR}/.env" ]]; then
         log_info "Environment file found: .env"
@@ -122,6 +124,7 @@ check_prereqs() {
     fi
 
     # Source .env
+    # shellcheck source=/dev/null
     set -a; source "${PROJECT_DIR}/.env"; set +a
 }
 
@@ -172,7 +175,7 @@ render_config_templates() {
 # Create required directories
 create_dirs() {
     log_step "Creating Directory Structure"
-    
+
     mkdir -p "${PROJECT_DIR}"/{docs,scripts,backups}
     mkdir -p "${PROJECT_DIR}"/prometheus/{rules,targets/{nodes,snmp,blackbox_icmp,blackbox_http,blackbox_tcp,blackbox_dns},alerts}
     mkdir -p "${PROJECT_DIR}"/grafana/{dashboards/json,datasources,provisioning/{dashboards,datasources,notifiers,alerting},reports}
@@ -185,7 +188,7 @@ create_dirs() {
     mkdir -p "${PROJECT_DIR}"/security/{suricata/{rules,templates,logs},fail2ban/filter.d,crowdsec}
     mkdir -p "${PROJECT_DIR}"/mariadb/{data,backup,config}
     mkdir -p "${PROJECT_DIR}"/redis/data
-    
+
     log_info "Directories created successfully"
 }
 
@@ -215,7 +218,7 @@ log_compose_mode() {
 pull_images() {
     log_step "Pulling Docker Images"
     log_compose_mode
-    
+
     # shellcheck disable=SC2046
     docker compose $(compose_files) pull
     docker compose $(compose_files) build auth-service
@@ -226,7 +229,7 @@ pull_images() {
 start_stack() {
     log_step "Starting OpenHostingNOC Stack"
     log_compose_mode
-    
+
     # shellcheck disable=SC2046
     docker compose $(compose_files) up -d
     log_info "Stack started successfully"
@@ -236,7 +239,7 @@ start_stack() {
 wait_for_services() {
     log_step "Waiting for Services to Become Healthy"
     log_compose_mode
-    
+
     local services=(
         "mariadb"
         "redis"
@@ -244,7 +247,7 @@ wait_for_services() {
         "opensearch"
         "librenms"
     )
-    
+
     for service in "${services[@]}"; do
         log_info "Waiting for $service..."
         # shellcheck disable=SC2046
@@ -253,22 +256,22 @@ wait_for_services() {
         docker compose $(compose_files) wait "$service" --timeout 120 2>/dev/null || \
         log_warn "$service health check timed out"
     done
-    
+
     log_info "All services started"
 }
 
 # Initialize LibreNMS
 init_librenms() {
     log_step "Initializing LibreNMS"
-    
+
     log_info "Waiting for LibreNMS to initialize database..."
     sleep 30
-    
+
     # Check if LibreNMS is ready
     # shellcheck disable=SC2046
     docker compose $(compose_files) exec -T librenms \
         php /opt/librenms/init.php 2>/dev/null || true
-    
+
     local proto="https"
     is_quickstart && proto="http"
     # shellcheck disable=SC2154
@@ -330,7 +333,7 @@ create_htpasswd() {
 # Post-installation steps
 post_install() {
     log_step "Post-Installation"
-    
+
     echo ""
     echo "╔══════════════════════════════════════════════════════════════════╗"
     echo "║           OpenHostingNOC Installation Complete                  ║"
@@ -381,7 +384,7 @@ main() {
     echo "║           Self-Hosted Network Operations Center                  ║"
     echo "╚══════════════════════════════════════════════════════════════════╝"
     echo ""
-    
+
     setup_logging
     trap 'dump_failed_logs' EXIT
     check_prereqs

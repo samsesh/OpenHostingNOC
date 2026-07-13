@@ -8,6 +8,8 @@
 
 set -euo pipefail
 
+# shellcheck disable=SC2154,SC1091
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
@@ -104,7 +106,7 @@ if [[ -f "${EXTRACTED_DIR}/mariadb.sql" ]]; then
     docker compose -f "${PROJECT_DIR}/docker-compose.yml" up -d mariadb
     log_info "Waiting for MariaDB to start..."
     sleep 15
-    
+
     docker compose -f "${PROJECT_DIR}/docker-compose.yml" exec -T mariadb \
         mysql -u root -p"${MARIADB_ROOT_PASSWORD}" < "${EXTRACTED_DIR}/mariadb.sql" 2>/dev/null || \
     docker compose -f "${PROJECT_DIR}/docker-compose.yml" exec -T mariadb \

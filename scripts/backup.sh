@@ -7,6 +7,8 @@
 
 set -euo pipefail
 
+# shellcheck disable=SC2154,SC1091
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
@@ -23,6 +25,7 @@ log_error() { echo -e "${RED}[ERROR]${NC} $1"; }
 log_step()  { echo -e "\n${CYAN}════════════════════════════════════════════${NC}"; echo -e "${CYAN}  $1${NC}"; echo -e "${CYAN}════════════════════════════════════════════${NC}"; }
 
 # Load environment (export all vars)
+# shellcheck source=/dev/null
 set -a; source "${PROJECT_DIR}/.env" 2>/dev/null || true; set +a
 
 # Timestamp
@@ -155,7 +158,7 @@ if docker compose -f "${PROJECT_DIR}/docker-compose.yml" ps -q opensearch 2>/dev
         -H 'Content-Type: application/json' \
         -d "{\"type\": \"fs\", \"settings\": {\"location\": \"/usr/share/opensearch/backup/${TIMESTAMP}\"}}" \
         2>/dev/null || true
-    
+
     # Take snapshot
     docker compose -f "${PROJECT_DIR}/docker-compose.yml" exec -T opensearch \
         curl -sk -u "admin:${OPENSEARCH_INITIAL_ADMIN_PASSWORD}" \
@@ -164,7 +167,7 @@ if docker compose -f "${PROJECT_DIR}/docker-compose.yml" ps -q opensearch 2>/dev
         -d '{"indices": "*", "ignore_unavailable": true, "include_global_state": true}' \
         2>/dev/null || \
     log_warn "OpenSearch snapshot backup failed"
-    
+
     # Copy snapshot files
     docker run --rm \
         -v opennoc_opensearch_backup:/data \

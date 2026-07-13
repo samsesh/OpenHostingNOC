@@ -155,11 +155,10 @@ receivers:
         auth_password: ${SMTP_PASSWORD}
         headers:
           subject: '🚨 {{ template "email.subject.emergency" . }}'
-        html: '{{ template "email.html.emergency" . }}'
-        send_resolved: true
-        headers:
           X-Priority: '1'
           Importance: 'high'
+        html: '{{ template "email.html.emergency" . }}'
+        send_resolved: true
     webhook_configs:
       - url: ${WEBHOOK_URL}
         send_resolved: true

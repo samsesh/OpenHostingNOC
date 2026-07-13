@@ -26,7 +26,7 @@
    ```bash
    # Copy backup to new server
    scp user@backup-server:/backups/latest.tar.gz /opt/OpenHostingNOC/backups/
-   
+
    # Restore
    cd /opt/OpenHostingNOC
    ./scripts/restore.sh latest

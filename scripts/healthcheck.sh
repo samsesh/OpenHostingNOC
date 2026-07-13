@@ -7,6 +7,8 @@
 
 set -euo pipefail
 
+# shellcheck disable=SC2154,SC1091
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
@@ -44,7 +46,7 @@ if [[ -f "${PROJECT_DIR}/docker-compose.yml" ]]; then
         if [[ -n "$container_id" ]]; then
             status=$(docker inspect --format='{{.State.Status}}' "$container_id" 2>/dev/null || true)
             health=$(docker inspect --format='{{if .State.Health}}{{.State.Health.Status}}{{else}}none{{end}}' "$container_id" 2>/dev/null || true)
-            
+
             if [[ "$status" == "running" ]]; then
                 if [[ "$health" == "healthy" ]]; then
                     log_info "$service is running and healthy"
@@ -151,11 +153,11 @@ if docker compose -f "${PROJECT_DIR}/docker-compose.yml" ps -q prometheus 2>/dev
     target_count=$(docker compose -f "${PROJECT_DIR}/docker-compose.yml" exec -T prometheus \
         wget -qO- http://localhost:9090/api/v1/targets 2>/dev/null | \
         python3 -c "import sys,json;d=json.load(sys.stdin);print(len(d['data']['activeTargets']))" 2>/dev/null || echo "0")
-    
+
     unhealthy_count=$(docker compose -f "${PROJECT_DIR}/docker-compose.yml" exec -T prometheus \
         wget -qO- http://localhost:9090/api/v1/targets 2>/dev/null | \
         python3 -c "import sys,json;d=json.load(sys.stdin);print(len([t for t in d['data']['activeTargets'] if t['health'] != 'up']))" 2>/dev/null || echo "0")
-    
+
     if [[ "$target_count" -gt 0 ]]; then
         if [[ "$unhealthy_count" -gt 0 ]]; then
             log_warn "Prometheus: $target_count targets, $unhealthy_count unhealthy"
@@ -175,7 +177,7 @@ if docker compose -f "${PROJECT_DIR}/docker-compose.yml" ps -q opensearch 2>/dev
         curl -sk -u "admin:${OPENSEARCH_INITIAL_ADMIN_PASSWORD:-changeme}" \
         https://localhost:9200/_cluster/health 2>/dev/null | \
         python3 -c "import sys,json;d=json.load(sys.stdin);print(d.get('status','unknown'))" 2>/dev/null || echo "unknown")
-    
+
     case "$os_status" in
         green)  log_info "OpenSearch cluster status: green" ;;
         yellow) log_warn "OpenSearch cluster status: yellow" ;;

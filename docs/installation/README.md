@@ -128,7 +128,7 @@ Groups:
 ### Add Monitoring Targets
 
 1. **Node Exporters**: Edit `prometheus/targets/nodes/example.yml`
-2. **SNMP Devices**: Edit `prometheus/targets/snmp/example.yml`  
+2. **SNMP Devices**: Edit `prometheus/targets/snmp/example.yml`
 3. **Ping Targets**: Edit `prometheus/targets/blackbox_icmp/example.yml`
 4. **HTTP Targets**: Edit `prometheus/targets/blackbox_http/example.yml`
 

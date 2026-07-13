@@ -8,6 +8,8 @@
 
 set -euo pipefail
 
+# shellcheck disable=SC2154,SC1091
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
@@ -24,6 +26,7 @@ log_error() { echo -e "${RED}[ERROR]${NC} $1"; }
 log_step()  { echo -e "\n${CYAN}════════════════════════════════════════════${NC}"; echo -e "${CYAN}  $1${NC}"; echo -e "${CYAN}════════════════════════════════════════════${NC}"; }
 
 # Load environment (export all vars)
+# shellcheck source=/dev/null
 set -a; source "${PROJECT_DIR}/.env" 2>/dev/null || true; set +a
 
 # Usage
@@ -61,7 +64,7 @@ done
 if [[ "$ROLLBACK" == true ]]; then
     log_step "Rollback Mode"
     log_info "Restoring from previous backup..."
-    
+
     # Check for rollback backup
     ROLLBACK_DIR="${PROJECT_DIR}/backups/rollback"
     if [[ -f "${ROLLBACK_DIR}/docker-compose.yml" ]]; then
@@ -102,7 +105,7 @@ else
     docker compose -f "${PROJECT_DIR}/docker-compose.yml" pull
     docker compose -f "${PROJECT_DIR}/docker-compose.yml" build auth-service
     NEW_HASH=$(docker compose -f "${PROJECT_DIR}/docker-compose.yml" images -q | md5sum 2>/dev/null || true)
-    
+
     if [[ "$CURRENT_HASH" != "$NEW_HASH" ]]; then
         log_info "Changes detected, recreating containers..."
         docker compose -f "${PROJECT_DIR}/docker-compose.yml" up -d --remove-orphans

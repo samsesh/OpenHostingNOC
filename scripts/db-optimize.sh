@@ -8,6 +8,8 @@
 
 set -euo pipefail
 
+# shellcheck disable=SC2154,SC1091
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
@@ -23,6 +25,7 @@ log_warn()  { echo -e "${YELLOW}[WARN]${NC} $1"; }
 log_step()  { echo -e "\n${CYAN}════════════════════════════════════════════${NC}"; echo -e "${CYAN}  $1${NC}"; echo -e "${CYAN}════════════════════════════════════════════${NC}"; }
 
 # Load environment (export all vars)
+# shellcheck source=/dev/null
 set -a; source "${PROJECT_DIR}/.env" 2>/dev/null || true; set +a
 
 # ---- MariaDB Optimization ----
@@ -30,21 +33,21 @@ log_step "Optimizing MariaDB"
 
 if docker compose -f "${PROJECT_DIR}/docker-compose.yml" ps -q mariadb 2>/dev/null | grep -q .; then
     log_info "Running MariaDB optimization..."
-    
+
     # Analyze tables
     docker compose -f "${PROJECT_DIR}/docker-compose.yml" exec -T mariadb \
         mysqlcheck -u root -p"${MARIADB_ROOT_PASSWORD}" \
         --all-databases \
         --analyze \
         --silent 2>/dev/null || true
-    
+
     # Optimize tables
     docker compose -f "${PROJECT_DIR}/docker-compose.yml" exec -T mariadb \
         mysqlcheck -u root -p"${MARIADB_ROOT_PASSWORD}" \
         --all-databases \
         --optimize \
         --silent 2>/dev/null || true
-    
+
     log_info "MariaDB optimization complete"
 else
     log_warn "MariaDB not running, skipping"
@@ -55,20 +58,20 @@ log_step "Optimizing OpenSearch Indices"
 
 if docker compose -f "${PROJECT_DIR}/docker-compose.yml" ps -q opensearch 2>/dev/null | grep -q .; then
     log_info "Running OpenSearch index optimization..."
-    
+
     # Force merge indices (reduce segment count)
     docker compose -f "${PROJECT_DIR}/docker-compose.yml" exec -T opensearch \
         curl -sk -u "admin:${OPENSEARCH_INITIAL_ADMIN_PASSWORD:-changeme}" \
         -X POST "https://localhost:9200/_forcemerge?max_num_segments=1&flush=true" \
         -H 'Content-Type: application/json' 2>/dev/null || \
     log_warn "OpenSearch force merge failed"
-    
+
     # Clear cache
     docker compose -f "${PROJECT_DIR}/docker-compose.yml" exec -T opensearch \
         curl -sk -u "admin:${OPENSEARCH_INITIAL_ADMIN_PASSWORD:-changeme}" \
         -X POST "https://localhost:9200/_cache/clear" \
         -H 'Content-Type: application/json' 2>/dev/null || true
-    
+
     log_info "OpenSearch optimization complete"
 else
     log_warn "OpenSearch not running, skipping"
@@ -79,11 +82,11 @@ log_step "Optimizing Prometheus TSDB"
 
 if docker compose -f "${PROJECT_DIR}/docker-compose.yml" ps -q prometheus 2>/dev/null | grep -q .; then
     log_info "Triggering Prometheus TSDB compaction..."
-    
+
     docker compose -f "${PROJECT_DIR}/docker-compose.yml" exec -T prometheus \
         wget -qO- --post-data='' http://localhost:9090/api/v1/admin/tsdb/compact 2>/dev/null || \
     log_warn "Prometheus TSDB compaction API not available (admin API disabled)"
-    
+
     log_info "Prometheus optimization complete"
 else
     log_warn "Prometheus not running, skipping"
