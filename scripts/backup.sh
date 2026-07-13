@@ -25,8 +25,10 @@ log_error() { echo -e "${RED}[ERROR]${NC} $1"; }
 log_step()  { echo -e "\n${CYAN}════════════════════════════════════════════${NC}"; echo -e "${CYAN}  $1${NC}"; echo -e "${CYAN}════════════════════════════════════════════${NC}"; }
 
 # Load environment (export all vars)
-# shellcheck source=/dev/null
-set -a; source "${PROJECT_DIR}/.env" 2>/dev/null || true; set +a
+set -a
+# shellcheck disable=SC1091
+source "${PROJECT_DIR}/.env" 2>/dev/null || true
+set +a
 
 # Timestamp
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
@@ -66,10 +68,8 @@ mkdir -p "$BACKUP_DIR"
 log_info "Backup directory: $BACKUP_DIR"
 
 # Check if stack is running
-STACK_RUNNING=false
 if docker compose -f "${PROJECT_DIR}/docker-compose.yml" ps --quiet 2>/dev/null | grep -q .; then
-    STACK_RUNNING=true
-    log_info "Stack is running - will stop databases for consistent backups"
+    log_info "Stack is running - proceeding with backup"
 fi
 
 # ---- 1. Backup Docker Compose and Environment ----
@@ -224,7 +224,7 @@ log_info "Backup archive: ${PROJECT_DIR}/backups/${TIMESTAMP}.tar.gz (${BACKUP_S
 
 # ---- 11. Cleanup old backups ----
 log_step "Cleaning Old Backups"
-find "${PROJECT_DIR}/backups" -name "*.tar.gz" -mtime +${RETENTION_DAYS} -delete 2>/dev/null || true
+find "${PROJECT_DIR}/backups" -name "*.tar.gz" -mtime +"${RETENTION_DAYS}" -delete 2>/dev/null || true
 log_info "Removed backups older than ${RETENTION_DAYS} days"
 
 # ---- 12. S3 sync (optional) ----

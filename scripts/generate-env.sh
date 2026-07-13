@@ -187,14 +187,11 @@ generate_full() {
     read -r -p "Let's Encrypt email (for cert expiry notices): " email
 
     # Generate random passwords
-    pass_admin=$(random_pass)
     pass_ldap=$(random_pass)
     pass_db=$(random_pass)
     pass_redis=$(random_pass)
     pass_grafana=$(random_pass)
-    pass_os=$(random_pass)
     pass_os_admin=$(random_pass)
-    pass_ntopng=$(random_pass)
 
     echo ""
     log_info "Generated secure passwords (saved to .env)"

@@ -36,9 +36,11 @@ setup_logging() {
 # Dump container logs for any failed services
 dump_failed_logs() {
     local failed=()
+    local compose_opts
+    compose_opts=$(compose_files)
     while IFS= read -r line; do
         failed+=("$line")
-    done < <(docker compose $(compose_files) ps --all 2>/dev/null | awk 'NR>1 && ($4 ~ /^Exit/ || $4 ~ /^Unhealthy/) {print $1}')
+    done < <(docker compose $compose_opts ps --all 2>/dev/null | awk 'NR>1 && ($4 ~ /^Exit/ || $4 ~ /^Unhealthy/) {print $1}')
 
     if [[ ${#failed[@]} -gt 0 ]]; then
         log_warn "The following containers failed: ${failed[*]}"
@@ -47,7 +49,8 @@ dump_failed_logs() {
             svc=$(echo "$container" | sed 's/^opennoc-\(.*\)-[0-9]\+$/\1/')
             echo ""
             log_info "--- Container logs for ${svc} (last 50 lines) ---"
-            docker compose $(compose_files) logs --tail=50 "$svc" 2>/dev/null || \
+            # shellcheck disable=SC2086
+            docker compose $compose_opts logs --tail=50 "$svc" 2>/dev/null || \
                 docker logs "$container" --tail 50 2>/dev/null || true
             log_info "--- End of ${svc} logs ---"
             echo ""
@@ -124,8 +127,10 @@ check_prereqs() {
     fi
 
     # Source .env
-    # shellcheck source=/dev/null
-    set -a; source "${PROJECT_DIR}/.env"; set +a
+    set -a
+    # shellcheck disable=SC1091
+    source "${PROJECT_DIR}/.env"
+    set +a
 }
 
 # Render config templates with environment variable substitution
@@ -219,9 +224,12 @@ pull_images() {
     log_step "Pulling Docker Images"
     log_compose_mode
 
-    # shellcheck disable=SC2046
-    docker compose $(compose_files) pull
-    docker compose $(compose_files) build auth-service
+    local compose_opts
+    compose_opts=$(compose_files)
+    # shellcheck disable=SC2086
+    docker compose $compose_opts pull
+    # shellcheck disable=SC2086
+    docker compose $compose_opts build auth-service
     log_info "Images pulled and built successfully"
 }
 
@@ -230,8 +238,10 @@ start_stack() {
     log_step "Starting OpenHostingNOC Stack"
     log_compose_mode
 
-    # shellcheck disable=SC2046
-    docker compose $(compose_files) up -d
+    local compose_opts
+    compose_opts=$(compose_files)
+    # shellcheck disable=SC2086
+    docker compose $compose_opts up -d
     log_info "Stack started successfully"
 }
 
@@ -248,12 +258,18 @@ wait_for_services() {
         "librenms"
     )
 
+    local compose_opts
+    compose_opts=$(compose_files)
     for service in "${services[@]}"; do
         log_info "Waiting for $service..."
-        # shellcheck disable=SC2046
-        docker compose $(compose_files) exec -T "$service" true 2>/dev/null || \
-        # shellcheck disable=SC2046
-        docker compose $(compose_files) wait "$service" --timeout 120 2>/dev/null || \
+        # shellcheck disable=SC2086
+        if docker compose $compose_opts exec -T "$service" true 2>/dev/null; then
+            continue
+        fi
+        # shellcheck disable=SC2086
+        if docker compose $compose_opts wait "$service" --timeout 120 2>/dev/null; then
+            continue
+        fi
         log_warn "$service health check timed out"
     done
 
@@ -267,9 +283,11 @@ init_librenms() {
     log_info "Waiting for LibreNMS to initialize database..."
     sleep 30
 
+    local compose_opts
+    compose_opts=$(compose_files)
     # Check if LibreNMS is ready
-    # shellcheck disable=SC2046
-    docker compose $(compose_files) exec -T librenms \
+    # shellcheck disable=SC2086
+    docker compose $compose_opts exec -T librenms \
         php /opt/librenms/init.php 2>/dev/null || true
 
     local proto="https"

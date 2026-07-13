@@ -15,7 +15,6 @@ PROJECT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 # Colors
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
-RED='\033[0;31m'
 CYAN='\033[0;36m'
 NC='\033[0m'
 
@@ -24,8 +23,10 @@ log_warn()  { echo -e "${YELLOW}[WARN]${NC} $1"; }
 log_step()  { echo -e "\n${CYAN}════════════════════════════════════════════${NC}"; echo -e "${CYAN}  $1${NC}"; echo -e "${CYAN}════════════════════════════════════════════${NC}"; }
 
 # Load environment (export all vars)
-# shellcheck source=/dev/null
-set -a; source "${PROJECT_DIR}/.env" 2>/dev/null || true; set +a
+set -a
+# shellcheck disable=SC1091
+source "${PROJECT_DIR}/.env" 2>/dev/null || true
+set +a
 
 # Determine cleanup depth
 DEEP_CLEAN=false
@@ -86,7 +87,7 @@ fi
 log_step "Cleaning Old Backups"
 
 RETENTION_DAYS=${BACKUP_RETENTION_DAYS:-30}
-find "${PROJECT_DIR}/backups" -name "*.tar.gz" -mtime +${RETENTION_DAYS} -delete 2>/dev/null || true
+find "${PROJECT_DIR}/backups" -name "*.tar.gz" -mtime +"${RETENTION_DAYS}" -delete 2>/dev/null || true
 log_info "Removed backups older than ${RETENTION_DAYS} days"
 
 # ---- Prometheus Data Retention ----

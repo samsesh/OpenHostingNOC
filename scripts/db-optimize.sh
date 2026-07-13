@@ -16,7 +16,6 @@ PROJECT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 # Colors
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
-RED='\033[0;31m'
 CYAN='\033[0;36m'
 NC='\033[0m'
 
@@ -25,8 +24,10 @@ log_warn()  { echo -e "${YELLOW}[WARN]${NC} $1"; }
 log_step()  { echo -e "\n${CYAN}════════════════════════════════════════════${NC}"; echo -e "${CYAN}  $1${NC}"; echo -e "${CYAN}════════════════════════════════════════════${NC}"; }
 
 # Load environment (export all vars)
-# shellcheck source=/dev/null
-set -a; source "${PROJECT_DIR}/.env" 2>/dev/null || true; set +a
+set -a
+# shellcheck disable=SC1091
+source "${PROJECT_DIR}/.env" 2>/dev/null || true
+set +a
 
 # ---- MariaDB Optimization ----
 log_step "Optimizing MariaDB"
