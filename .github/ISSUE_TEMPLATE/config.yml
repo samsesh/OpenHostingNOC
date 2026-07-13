@@ -3,6 +3,9 @@ contact_links:
   - name: OpenHostingNOC Documentation
     url: https://github.com/samsesh/OpenHostingNOC/wiki
     about: Check the wiki before opening an issue
+  - name: GitHub Discussions
+    url: https://github.com/samsesh/OpenHostingNOC/discussions
+    about: Ask questions, share setups, or request help
   - name: Donate
     url: https://donate.samsesh.net
     about: Support the project

@@ -24,7 +24,8 @@
   <a href="#architecture">Architecture</a> •
   <a href="#quick-start">Quick Start</a> •
   <a href="#documentation">Documentation</a> •
-  <a href="#contributing">Contributing</a>
+  <a href="CONTRIBUTING.md">Contributing</a> •
+  <a href="CODE_OF_CONDUCT.md">Code of Conduct</a>
 </p>
 
 ---
@@ -368,85 +369,9 @@ Push to `Localhost` or `main` triggers all workflows automatically.
 
 ## Contributing
 
-Contributions are welcome! Here's how to get started.
+Please read [CONTRIBUTING.md](CONTRIBUTING.md) for details on our code of conduct, commit conventions, development workflow, and how to submit pull requests.
 
-### Prerequisites
-- Docker 24.0+ & Compose v2.20+
-- ShellCheck (`shellcheck`), yamllint (`pip install yamllint`)
-- hadolint (`docker pull hadolint/hadolint`)
-- BATS (`npm install -g bats`)
-
-### Workflow
-
-1. Fork the repository
-2. Create a feature branch:
-   ```bash
-   git checkout -b feature/my-feature
-   ```
-3. Make your changes
-4. Run lints locally:
-   ```bash
-   shellcheck scripts/*.sh
-   yamllint .
-   docker run --rm -v $(pwd):/mnt hadolint/hadolint hadolint /mnt/Dockerfile /mnt/auth/Dockerfile
-   ```
-5. Run tests:
-   ```bash
-   bats tests/
-   ```
-6. Commit with a descriptive message:
-   ```bash
-   git commit -am 'feat: add my feature'
-   ```
-7. Push and open a Pull Request:
-   ```bash
-   git push origin feature/my-feature
-   ```
-
-### Commit Conventions
-
-Use conventional commit prefixes:
-
-| Prefix | Usage |
-|---|---|
-| `feat:` | New feature |
-| `fix:` | Bug fix |
-| `ci:` | CI/CD changes |
-| `docs:` | Documentation |
-| `refactor:` | Code restructuring |
-| `test:` | Test additions/fixes |
-| `chore:` | Maintenance |
-
-### Code Style
-
-- **Shell scripts**: `set -euo pipefail`, spaces not tabs, 4-space indent
-- **YAML**: 2-space indent, no trailing whitespace
-- **Dockerfiles**: Pin versions, use `--no-cache` / `--no-install-recommends`
-
-### Pull Request Checklist
-
-- [ ] ShellCheck passes with no errors
-- [ ] yamllint passes
-- [ ] YAML/JSON configs are valid
-- [ ] `bats tests/` passes
-- [ ] New configs have matching test entries
-- [ ] `.env.example` updated if new env vars added
-
-### Development
-
-```bash
-# Start in development mode
-docker compose up -d
-
-# View logs
-docker compose logs -f
-
-# Make config changes and reload
-docker compose restart <service>
-
-# Run full test suite
-bats tests/
-```
+We welcome bug reports, feature requests, documentation improvements, and new integrations.
 
 ---
 

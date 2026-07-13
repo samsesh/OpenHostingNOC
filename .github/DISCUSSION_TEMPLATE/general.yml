@@ -1,0 +1,17 @@
+title: "General Discussion"
+labels: [question]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for starting a discussion! Please search existing discussions before posting.
+  - type: textarea
+    attributes:
+      label: Topic
+      description: What would you like to discuss?
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Additional context
+      description: Any links, screenshots, or references

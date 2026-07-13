@@ -41,3 +41,7 @@ docker compose logs <service> --tail=50
 
 **Additional context**
 Add any other context about the problem here.
+
+---
+
+*This issue is labeled `bug`. Maintainers may add `good first issue` or `help wanted` if it's suitable for new contributors.*

@@ -14,14 +14,17 @@ Fixes # (issue)
 
 ## How Has This Been Tested?
 
-- [ ] Test A
-- [ ] Test B
+- [ ] `shellcheck scripts/*.sh` — no errors
+- [ ] `yamllint .` — no errors
+- [ ] `bats tests/` — all tests pass
+- [ ] Manual deploy with `docker compose up -d` — services start cleanly
 
 ## Checklist:
 
+- [ ] I have read [CONTRIBUTING.md](../CONTRIBUTING.md)
 - [ ] My code follows the style guidelines of this project
 - [ ] I have performed a self-review of my own changes
-- [ ] I have commented my changes, particularly in hard-to-understand areas
 - [ ] I have made corresponding changes to the documentation
-- [ ] My changes generate no new warnings
-- [ ] I have tested that my changes work with the existing configuration
+- [ ] My changes generate no new linter warnings
+- [ ] New configs have matching test entries
+- [ ] `.env.example` updated if new env vars were added
