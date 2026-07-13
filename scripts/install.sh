@@ -40,13 +40,16 @@ dump_failed_logs() {
     compose_opts=$(compose_files)
     while IFS= read -r line; do
         failed+=("$line")
+    # shellcheck disable=SC2086
     done < <(docker compose $compose_opts ps --all 2>/dev/null | awk 'NR>1 && ($4 ~ /^Exit/ || $4 ~ /^Unhealthy/) {print $1}')
 
     if [[ ${#failed[@]} -gt 0 ]]; then
         log_warn "The following containers failed: ${failed[*]}"
         for container in "${failed[@]}"; do
-            local svc
-            svc=$(echo "$container" | sed 's/^opennoc-\(.*\)-[0-9]\+$/\1/')
+            local svc=""
+            if [[ "$container" =~ ^opennoc-(.*)-[0-9]+$ ]]; then
+                svc="${BASH_REMATCH[1]}"
+            fi
             echo ""
             log_info "--- Container logs for ${svc} (last 50 lines) ---"
             # shellcheck disable=SC2086

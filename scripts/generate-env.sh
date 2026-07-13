@@ -170,14 +170,11 @@ generate_full() {
 
     local domain=""
     local email=""
-    local pass_admin=""
     local pass_ldap=""
     local pass_db=""
     local pass_redis=""
     local pass_grafana=""
-    local pass_os=""
     local pass_os_admin=""
-    local pass_ntopng=""
 
     read -r -p "Domain (e.g. noc.example.com): " domain
     while [[ -z "$domain" ]]; do
