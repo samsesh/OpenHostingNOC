@@ -1,0 +1,55 @@
+name: Tests
+
+on:
+  push:
+    branches: [main, Localhost]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  bats:
+    name: BATS Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install BATS
+        run: |
+          npm install -g bats
+          bats --version
+
+      - name: Run config tests
+        run: bats tests/test_configs.bats
+
+      - name: Run script tests
+        run: bats tests/test_scripts.bats
+
+      - name: Run Docker tests
+        run: bats tests/test_docker.bats
+        env:
+          CI: true
+
+  config-validation:
+    name: Config Validation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create .env for validation
+        run: cp .env.example .env
+
+      - name: Validate all JSON files
+        run: |
+          for f in $(find . -name '*.json' -not -path './.git/*'); do
+            python3 -m json.tool "$f" > /dev/null && echo "OK: $f" || exit 1
+          done
+
+      - name: Validate librenms config
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq php-cli
+          php -l librenms/config/librenms.php

@@ -21,6 +21,10 @@
 - [Scaling](Scaling)
 - [Disaster Recovery](Disaster-Recovery)
 
+**CI/CD**
+- [GitHub Actions](https://github.com/samsesh/OpenHostingNOC/actions)
+- [Docker Packages](https://github.com/samsesh/OpenHostingNOC/pkgs/container/opennoc)
+
 ---
 - [GitHub](https://github.com/samsesh/OpenHostingNOC)
 - [Issues](https://github.com/samsesh/OpenHostingNOC/issues)

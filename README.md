@@ -7,6 +7,9 @@
   <img src="https://img.shields.io/badge/OpenSearch-2.19-005EB8" alt="OpenSearch">
   <img src="https://img.shields.io/badge/Grafana-11-FF8F00" alt="Grafana">
   <img src="https://img.shields.io/badge/LibreNMS-26.6-00BFA5" alt="LibreNMS">
+  <img src="https://img.shields.io/github/actions/workflow/status/samsesh/OpenHostingNOC/ci.yml?branch=main&label=CI" alt="CI">
+  <img src="https://img.shields.io/github/actions/workflow/status/samsesh/OpenHostingNOC/test.yml?branch=main&label=tests" alt="Tests">
+  <img src="https://img.shields.io/github/actions/workflow/status/samsesh/OpenHostingNOC/docker-publish.yml?branch=main&label=docker" alt="Docker">
 </p>
 
 <h1 align="center">🔭 OpenHostingNOC</h1>
@@ -159,6 +162,17 @@
 - Docker 24.0+ & Compose v2.20+
 - Ubuntu 22.04+ / Debian 12+ / Rocky Linux 9+
 - 4+ CPU cores, 16GB+ RAM, 200GB+ SSD
+
+### Option 0: Docker Image (all-in-one)
+
+Pull the pre-built Docker image with all tools and configs included:
+
+```bash
+docker pull ghcr.io/samsesh/opennoc:latest
+docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
+  -v "$(pwd)/.env:/opennoc/.env" \
+  ghcr.io/samsesh/opennoc
+```
 
 ### Option 1: Quick Setup (no domain, no TLS, default passwords)
 
@@ -366,6 +380,17 @@ Suricata 7      → IDS/IPS (optional)
 
 ---
 
+## CI/CD
+
+| Workflow | Description | Status |
+|---|---|---|
+| **CI** | ShellCheck, yamllint, hadolint, Compose validation, JSON lint | [![CI](https://img.shields.io/github/actions/workflow/status/samsesh/OpenHostingNOC/ci.yml?branch=main&label=)](https://github.com/samsesh/OpenHostingNOC/actions/workflows/ci.yml) |
+| **Tests** | BATS test suite for configs, scripts, and Docker | [![Tests](https://img.shields.io/github/actions/workflow/status/samsesh/OpenHostingNOC/test.yml?branch=main&label=)](https://github.com/samsesh/OpenHostingNOC/actions/workflows/test.yml) |
+| **Docker** | Build & push multi-arch image to GHCR | [![Docker](https://img.shields.io/github/actions/workflow/status/samsesh/OpenHostingNOC/docker-publish.yml?branch=main&label=)](https://github.com/samsesh/OpenHostingNOC/actions/workflows/docker-publish.yml) |
+| **Wiki Sync** | Sync `.github/wiki/` to GitHub Wiki | [![Wiki](https://img.shields.io/github/actions/workflow/status/samsesh/OpenHostingNOC/sync-wiki.yml?branch=main&label=)](https://github.com/samsesh/OpenHostingNOC/actions/workflows/sync-wiki.yml) |
+
+Push to `Localhost` or `main` triggers all workflows automatically.
+
 ## Contributing
 
 1. Fork the repository
@@ -385,6 +410,9 @@ docker compose logs -f
 
 # Make config changes and reload
 docker compose restart <service>
+
+# Run tests locally
+bats tests/
 ```
 
 ---
