@@ -358,11 +358,11 @@ Suricata 7      → IDS/IPS (optional)
 
 | Workflow | Description | Status |
 |---|---|---|
-| **CI** | ShellCheck, yamllint, hadolint, Compose validation, JSON lint | [![CI](https://img.shields.io/github/actions/workflow/status/samsesh/OpenHostingNOC/ci.yml?branch=main&label=)](https://github.com/samsesh/OpenHostingNOC/actions/workflows/ci.yml) |
-| **Tests** | BATS test suite for configs, scripts, and Docker | [![Tests](https://img.shields.io/github/actions/workflow/status/samsesh/OpenHostingNOC/test.yml?branch=main&label=)](https://github.com/samsesh/OpenHostingNOC/actions/workflows/test.yml) |
-| **Docker** | Build & push multi-arch image to GHCR | [![Docker](https://img.shields.io/github/actions/workflow/status/samsesh/OpenHostingNOC/docker-publish.yml?branch=main&label=)](https://github.com/samsesh/OpenHostingNOC/actions/workflows/docker-publish.yml) |
-| **Wiki Sync** | Sync `.github/wiki/` to GitHub Wiki | [![Wiki](https://img.shields.io/github/actions/workflow/status/samsesh/OpenHostingNOC/sync-wiki.yml?branch=main&label=)](https://github.com/samsesh/OpenHostingNOC/actions/workflows/sync-wiki.yml) |
-| **Discussions** | Release announcements, weekly status, test failure alerts | [![Discussions](https://img.shields.io/github/actions/workflow/status/samsesh/OpenHostingNOC/discussions.yml?branch=main&label=)](https://github.com/samsesh/OpenHostingNOC/actions/workflows/discussions.yml) |
+| **CI** | ShellCheck, yamllint, hadolint, Compose validation, JSON lint | [![CI](https://img.shields.io/github/actions/workflow/status/samsesh/OpenHostingNOC/ci.yml?branch=Localhost&label=)](https://github.com/samsesh/OpenHostingNOC/actions/workflows/ci.yml) |
+| **Tests** | BATS test suite for configs, scripts, and Docker | [![Tests](https://img.shields.io/github/actions/workflow/status/samsesh/OpenHostingNOC/test.yml?branch=Localhost&label=)](https://github.com/samsesh/OpenHostingNOC/actions/workflows/test.yml) |
+| **Docker** | Build & push multi-arch image to GHCR | [![Docker](https://img.shields.io/github/actions/workflow/status/samsesh/OpenHostingNOC/docker-publish.yml?branch=Localhost&label=)](https://github.com/samsesh/OpenHostingNOC/actions/workflows/docker-publish.yml) |
+| **Wiki Sync** | Sync `.github/wiki/` to GitHub Wiki | [![Wiki](https://img.shields.io/github/actions/workflow/status/samsesh/OpenHostingNOC/sync-wiki.yml?branch=Localhost&label=)](https://github.com/samsesh/OpenHostingNOC/actions/workflows/sync-wiki.yml) |
+| **Discussions** | Release announcements, weekly status, test failure alerts | [![Discussions](https://img.shields.io/github/actions/workflow/status/samsesh/OpenHostingNOC/discussions.yml?branch=Localhost&label=)](https://github.com/samsesh/OpenHostingNOC/actions/workflows/discussions.yml) |
 
 Push to `Localhost` or `main` triggers all workflows automatically.
 
