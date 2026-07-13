@@ -1,0 +1,200 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  shellcheck:
+    name: ShellCheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run ShellCheck on all shell scripts
+        uses: ludeeus/action-shellcheck@master
+        with:
+          scandir: ./scripts
+          severity: style
+
+      - name: Run ShellCheck on security scripts
+        uses: ludeeus/action-shellcheck@master
+        with:
+          scandir: ./security
+          severity: style
+
+  yamllint:
+    name: YAML Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install yamllint
+        run: pip install yamllint
+
+      - name: Run yamllint on all YAML files
+        run: |
+          yamllint --no-warnings -d '{extends: relaxed, rules: {line-length: {max: 200}, brackets: {min-spaces-inside: 0, max-spaces-inside: 1}, indentation: {spaces: 2, indent-sequences: consistent}}}' .
+
+  hadolint:
+    name: Dockerfile Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run hadolint on Dockerfile
+        uses: hadolint/hadolint-action@v3.1.0
+        with:
+          dockerfile: auth/Dockerfile
+
+  compose-validate:
+    name: Docker Compose Validate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Compose
+        run: |
+          docker compose version
+
+      - name: Create minimal .env for validation
+        run: |
+          cp .env.example .env
+          sed -i 's/DOMAIN=noc.example.com/DOMAIN=ci.nip.io/' .env
+          echo "DOMAIN=ci.nip.io" >> .env
+
+      - name: Validate docker-compose.yml
+        run: |
+          docker compose -f docker-compose.yml config
+
+      - name: Validate docker-compose.quickstart.yml
+        run: |
+          docker compose -f docker-compose.yml -f docker-compose.quickstart.yml config
+
+  env-validate:
+    name: .env Syntax Validation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate .env.example syntax
+        run: |
+          errors=0
+          while IFS='=' read -r key _; do
+            if [[ -z "$key" ]]; then
+              continue
+            fi
+            if [[ "$key" =~ ^[A-Z_][A-Z0-9_]*$ ]]; then
+              : valid
+            elif [[ "$key" =~ ^[[:space:]]*# ]]; then
+              : comment
+            elif [[ -z "${key// }" ]]; then
+              : empty
+            else
+              echo "Invalid key format: $key"
+              errors=$((errors + 1))
+            fi
+          done < .env.example
+          if [[ $errors -gt 0 ]]; then
+            echo "Found $errors invalid env keys"
+            exit 1
+          fi
+          echo "All env keys are valid"
+
+      - name: Check for required variables
+        run: |
+          required=("DOMAIN" "TIMEZONE")
+          missing=()
+          for var in "${required[@]}"; do
+            if ! grep -q "^${var}=" .env.example; then
+              missing+=("$var")
+            fi
+          done
+          if [[ ${#missing[@]} -gt 0 ]]; then
+            echo "Missing required variables: ${missing[*]}"
+            exit 1
+          fi
+          echo "All required variables present"
+
+  json-validate:
+    name: JSON Validate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate JSON files
+        run: |
+          errors=0
+          while IFS= read -r file; do
+            if python3 -m json.tool "$file" > /dev/null 2>&1; then
+              echo "OK: $file"
+            else
+              echo "INVALID: $file"
+              python3 -m json.tool "$file" || true
+              errors=$((errors + 1))
+            fi
+          done < <(find . -name '*.json' -not -path './.git/*' -not -path './node_modules/*')
+          if [[ $errors -gt 0 ]]; then
+            echo "Found $errors invalid JSON files"
+            exit 1
+          fi
+          echo "All JSON files are valid"
+
+  markdown-lint:
+    name: Markdown Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check markdown files are well-formed
+        run: |
+          errors=0
+          while IFS= read -r file; do
+            last_char=$(tail -c 1 "$file")
+            if [[ -n "$last_char" ]]; then
+              echo "WARN: $file missing trailing newline"
+              errors=$((errors + 1))
+            fi
+          done < <(find . -name '*.md' -not -path './.git/*')
+          if [[ $errors -gt 0 ]]; then
+            echo "Found $errors files missing trailing newlines"
+            exit 1
+          fi
+          echo "All markdown files have trailing newlines"
+
+  trailing-whitespace:
+    name: Trailing Whitespace Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check for trailing whitespace
+        run: |
+          errors=0
+          while IFS= read -r file; do
+            if grep -rn '[[:space:]]$' "$file" > /dev/null 2>&1; then
+              echo "Trailing whitespace in: $file"
+              errors=$((errors + 1))
+            fi
+          done < <(find . -type f \
+            -not -path './.git/*' \
+            -not -path '*/node_modules/*' \
+            -not -name '*.tar.gz' \
+            -not -name '*.gz' \
+            -not -name '*.zip' \
+            -not -name '*.png' \
+            -not -name '*.jpg' \
+            -not -name '*.ico' \
+            \( -name '*.sh' -o -name '*.yml' -o -name '*.yaml' -o -name '*.py' -o -name '*.md' -o -name '*.php' -o -name '*.conf' -o -name '*.ini' -o -name '*.toml' -o -name '*.json' -o -name '*.txt' -o -name '*.cfg' -o -name '*.env*' -o -name '*.ldif' -o -name '*.html' -o -name '*.css' -o -name '*.js' \))
+          if [[ $errors -gt 0 ]]; then
+            echo "Found $errors files with trailing whitespace"
+            exit 1
+          fi
+          echo "No trailing whitespace found"

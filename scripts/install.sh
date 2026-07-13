@@ -238,15 +238,11 @@ wait_for_services() {
     log_compose_mode
     
     local services=(
-        "traefik"
-        "auth-service"
         "mariadb"
         "redis"
         "prometheus"
-        "grafana"
-        "alertmanager"
-        "loki"
         "opensearch"
+        "librenms"
     )
     
     for service in "${services[@]}"; do

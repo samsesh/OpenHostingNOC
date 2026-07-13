@@ -19,7 +19,7 @@ services:
       - --providers.file.watch=true
       - --accesslog=true
       - --accesslog.filepath=/var/log/traefik/access.log
-      - --accesslog.buffersize=100
+      # buffersize flag removed in Traefik v3.x
       - --metrics.prometheus=true
       - --metrics.prometheus.addrouterslabels=true
       - --metrics.prometheus.addentrypointslabels=true

@@ -23,8 +23,8 @@ log_warn()  { echo -e "${YELLOW}[WARN]${NC} $1"; }
 log_error() { echo -e "${RED}[ERROR]${NC} $1"; }
 log_step()  { echo -e "\n${CYAN}════════════════════════════════════════════${NC}"; echo -e "${CYAN}  $1${NC}"; echo -e "${CYAN}════════════════════════════════════════════${NC}"; }
 
-# Load environment
-source "${PROJECT_DIR}/.env" 2>/dev/null || true
+# Load environment (export all vars)
+set -a; source "${PROJECT_DIR}/.env" 2>/dev/null || true; set +a
 
 # Usage
 usage() {

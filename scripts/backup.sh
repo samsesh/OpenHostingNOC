@@ -22,8 +22,8 @@ log_warn()  { echo -e "${YELLOW}[WARN]${NC} $1"; }
 log_error() { echo -e "${RED}[ERROR]${NC} $1"; }
 log_step()  { echo -e "\n${CYAN}════════════════════════════════════════════${NC}"; echo -e "${CYAN}  $1${NC}"; echo -e "${CYAN}════════════════════════════════════════════${NC}"; }
 
-# Load environment
-source "${PROJECT_DIR}/.env" 2>/dev/null || true
+# Load environment (export all vars)
+set -a; source "${PROJECT_DIR}/.env" 2>/dev/null || true; set +a
 
 # Timestamp
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
@@ -176,11 +176,11 @@ log_info "OpenSearch backup complete"
 # ---- 8. Backup LibreNMS RRD ----
 log_step "Backing up LibreNMS RRD"
 docker run --rm \
-    -v opennoc_librenms_rrd:/data \
+    -v opennoc_librenms_data:/data \
     -v "${BACKUP_DIR}:/backup" \
-    alpine tar czf /backup/librenms_rrd.tar.gz -C /data . 2>/dev/null || \
-log_warn "LibreNMS RRD backup failed"
-log_info "LibreNMS RRD backed up"
+    alpine tar czf /backup/librenms_data.tar.gz -C /data . 2>/dev/null || \
+log_warn "LibreNMS data backup failed"
+log_info "LibreNMS data backed up"
 
 # ---- 9. Create backup manifest ----
 log_step "Creating Backup Manifest"
@@ -198,7 +198,7 @@ Files:
   prometheus_data.tar.gz- Prometheus TSDB data
   loki_data.tar.gz      - Loki log data
   opensearch_backup.tar.gz - OpenSearch indices snapshot
-  librenms_rrd.tar.gz   - LibreNMS RRD time-series data
+  librenms_data.tar.gz  - LibreNMS application data
   docker-compose.yml    - Docker Compose configuration
   .env                  - Environment variables (secrets!)
   config/               - All service configuration files

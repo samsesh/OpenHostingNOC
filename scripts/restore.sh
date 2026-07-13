@@ -157,15 +157,15 @@ if [[ -f "${EXTRACTED_DIR}/opensearch_backup.tar.gz" ]]; then
     log_info "OpenSearch backup data restored (snapshot restore via API needed after startup)"
 fi
 
-# ---- 7. Restore LibreNMS RRD ----
-if [[ -f "${EXTRACTED_DIR}/librenms_rrd.tar.gz" ]]; then
-    log_step "Restoring LibreNMS RRD"
-    docker volume rm opennoc_librenms_rrd 2>/dev/null || true
+# ---- 7. Restore LibreNMS Data ----
+if [[ -f "${EXTRACTED_DIR}/librenms_data.tar.gz" ]]; then
+    log_step "Restoring LibreNMS Data"
+    docker volume rm opennoc_librenms_data 2>/dev/null || true
     docker run --rm \
-        -v opennoc_librenms_rrd:/data \
+        -v opennoc_librenms_data:/data \
         -v "${EXTRACTED_DIR}:/backup" \
-        alpine tar xzf /backup/librenms_rrd.tar.gz -C /data
-    log_info "LibreNMS RRD restored"
+        alpine tar xzf /backup/librenms_data.tar.gz -C /data
+    log_info "LibreNMS data restored"
 fi
 
 # ---- 8. Start the stack ----

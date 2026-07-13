@@ -608,7 +608,7 @@ services:
       - --storage.tsdb.wal-compression
       - --web.console.templates=/etc/prometheus/consoles
       - --web.console.libraries=/etc/prometheus/console_libraries
-      - --web.external-url=https://prometheus.${DOMAIN:-noc.example.com}
+      - --web.external-url=${PROMETHEUS_SCHEME:-https}://prometheus.${DOMAIN:-noc.example.com}
       - --web.enable-lifecycle
       - --web.enable-admin-api
       - --log.level=${PROMETHEUS_LOG_LEVEL:-info}
@@ -705,7 +705,7 @@ services:
       - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER:-admin}
       - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-changeme}
       - GF_INSTALL_PLUGINS=grafana-piechart-panel,grafana-worldmap-panel,natel-discrete-panel,briangann-gauge-panel,briangann-datatable-panel,pr0ps-trackmap-panel,michaeldmoore-multistat-panel,michaeldmoore-annunciator-panel,grafana-polystat-panel,openshift-nsp-network-activity-panel
-      - GF_SERVER_ROOT_URL=https://${GRAFANA_DOMAIN:-grafana.noc.example.com}
+      - GF_SERVER_ROOT_URL=${GRAFANA_SCHEME:-https}://${GRAFANA_DOMAIN:-grafana.${DOMAIN:-noc.example.com}}
       - GF_AUTH_LDAP_ENABLED=${GRAFANA_LDAP_ENABLED:-true}
     deploy:
       resources:

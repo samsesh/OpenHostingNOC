@@ -5,12 +5,18 @@ on:
     branches: [main]
     paths:
       - 'docker-compose.yml'
+      - 'docker-compose.quickstart.yml'
       - '.env.example'
   pull_request:
     branches: [main]
     paths:
       - 'docker-compose.yml'
+      - 'docker-compose.quickstart.yml'
       - '.env.example'
+  workflow_dispatch:
+
+env:
+  DOMAIN: ci.nip.io
 
 jobs:
   validate:
@@ -19,19 +25,36 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Set up Docker Compose
-        run: |
-          docker compose version
+        run: docker compose version
 
       - name: Validate docker-compose.yml
         run: |
-          docker compose config
+          cp .env.example .env
+          docker compose -f docker-compose.yml config
+
+      - name: Validate with quickstart override
+        run: |
+          docker compose -f docker-compose.yml -f docker-compose.quickstart.yml config
 
       - name: Validate .env.example syntax
         run: |
-          grep -q '^[A-Z_]*=' .env.example && echo "Valid env format" || echo "Invalid env format"
+          errors=0
+          while IFS= read -r line; do
+            [[ -z "$line" || "$line" =~ ^[[:space:]]*# ]] && continue
+            if ! echo "$line" | grep -q '^[A-Z_][A-Z0-9_]*='; then
+              echo "Invalid line: $line"
+              errors=$((errors + 1))
+            fi
+          done < .env.example
+          [[ $errors -eq 0 ]] && echo "All env keys valid" || exit 1
 
-      - name: Validate YAML files
+      - name: Validate all YAML files
         run: |
-          for f in $(find . -name "*.yml" -o -name "*.yaml"); do
-            python3 -c "import yaml; yaml.safe_load(open('$f')); print(f'OK: $f')"
-          done
+          errors=0
+          while IFS= read -r f; do
+            python3 -c "import yaml; yaml.safe_load(open('$f')); print(f'OK: $f')" || {
+              echo "INVALID: $f"
+              errors=$((errors + 1))
+            }
+          done < <(find . -name '*.yml' -o -name '*.yaml' | grep -v node_modules | grep -v /.git/)
+          [[ $errors -eq 0 ]] && echo "All YAML files valid" || exit 1
