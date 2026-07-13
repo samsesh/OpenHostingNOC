@@ -241,31 +241,6 @@ docker compose logs -f        # Follow live logs
 
 ---
 
-## Screenshots
-
-<table>
-  <tr>
-    <th>NOC Overview Dashboard</th>
-    <th>Security Dashboard</th>
-  </tr>
-  <tr>
-    <td><img src="docs/images/noc-overview.png" alt="NOC Overview" width="400"></td>
-    <td><img src="docs/images/security-dashboard.png" alt="Security Dashboard" width="400"></td>
-  </tr>
-  <tr>
-    <th>Traffic & Bandwidth</th>
-    <th>Docker Monitoring</th>
-  </tr>
-  <tr>
-    <td><img src="docs/images/traffic-bandwidth.png" alt="Traffic Bandwidth" width="400"></td>
-    <td><img src="docs/images/docker-monitoring.png" alt="Docker" width="400"></td>
-  </tr>
-</table>
-
-*Note: Add screenshots to `docs/images/` after deployment.*
-
----
-
 ## Use Cases
 
 ### 🏢 Hosting Provider NOC

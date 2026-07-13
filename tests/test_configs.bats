@@ -95,10 +95,14 @@ setup() {
 }
 
 @test "librenms config.php has no syntax errors" {
+    if ! command -v php &>/dev/null; then
+        skip "PHP not available"
+    fi
     php -l "${PROJECT_DIR}/librenms/config/librenms.php"
 }
 
 @test "auth-service Dockerfile lints clean" {
+    require_docker
     docker run --rm -v "${PROJECT_DIR}:/mnt" hadolint/hadolint:v2.12.0 \
         hadolint /mnt/auth/Dockerfile -c /mnt/.hadolint.yaml
 }
