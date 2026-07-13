@@ -2,7 +2,7 @@ name: Validate Docker Compose
 
 on:
   push:
-    branches: [main]
+    branches: [main, Localhost]
     paths:
       - 'docker-compose.yml'
       - 'docker-compose.quickstart.yml'
