@@ -5,7 +5,7 @@
 # =============================================================================
 
 setup() {
-    load 'helpers'
+    load 'test_helpers'
     PROJECT_DIR="$(cd "$(dirname "$BATS_TEST_FILENAME")/.." && pwd)"
 }
 

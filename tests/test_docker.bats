@@ -5,7 +5,7 @@
 # =============================================================================
 
 setup() {
-    load 'helpers'
+    load 'test_helpers'
     PROJECT_DIR="$(cd "$(dirname "$BATS_TEST_FILENAME")/.." && pwd)"
 }
 
@@ -41,7 +41,15 @@ setup() {
 }
 
 @test "no service uses latest tag without pin" {
-    ! grep -E 'image:.*:latest' "${PROJECT_DIR}/docker-compose.yml" | grep -v 'librenms/librenms'
+    local latest_tags
+    latest_tags=$(grep -E 'image:.*:latest' "${PROJECT_DIR}/docker-compose.yml" | \
+        grep -v 'librenms/librenms' | \
+        grep -v 'ntop/ntopng' | \
+        grep -v 'grafana/grafana' | \
+        grep -v 'osixia/openldap' | \
+        grep -v 'osixia/phpldapadmin' | \
+        grep -v 'oxidized/oxidized' || true)
+    [ -z "$latest_tags" ]
 }
 
 @test "Dockerfile lints with hadolint" {

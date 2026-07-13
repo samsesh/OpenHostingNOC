@@ -38,9 +38,9 @@ dump_failed_logs() {
     local failed=()
     local compose_opts
     compose_opts=$(compose_files)
+    # shellcheck disable=SC2086
     while IFS= read -r line; do
         failed+=("$line")
-    # shellcheck disable=SC2086
     done < <(docker compose $compose_opts ps --all 2>/dev/null | awk 'NR>1 && ($4 ~ /^Exit/ || $4 ~ /^Unhealthy/) {print $1}')
 
     if [[ ${#failed[@]} -gt 0 ]]; then
