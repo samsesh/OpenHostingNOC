@@ -7,9 +7,9 @@
   <img src="https://img.shields.io/badge/OpenSearch-2.19-005EB8" alt="OpenSearch">
   <img src="https://img.shields.io/badge/Grafana-11-FF8F00" alt="Grafana">
   <img src="https://img.shields.io/badge/LibreNMS-26.6-00BFA5" alt="LibreNMS">
-  <img src="https://img.shields.io/github/actions/workflow/status/samsesh/OpenHostingNOC/ci.yml?branch=main&label=CI" alt="CI">
-  <img src="https://img.shields.io/github/actions/workflow/status/samsesh/OpenHostingNOC/test.yml?branch=main&label=tests" alt="Tests">
-  <img src="https://img.shields.io/github/actions/workflow/status/samsesh/OpenHostingNOC/docker-publish.yml?branch=main&label=docker" alt="Docker">
+  <img src="https://img.shields.io/github/actions/workflow/status/samsesh/OpenHostingNOC/ci.yml?branch=Localhost&label=CI" alt="CI">
+  <img src="https://img.shields.io/github/actions/workflow/status/samsesh/OpenHostingNOC/test.yml?branch=Localhost&label=tests" alt="Tests">
+  <img src="https://img.shields.io/github/actions/workflow/status/samsesh/OpenHostingNOC/docker-publish.yml?branch=Localhost&label=docker" alt="Docker">
 </p>
 
 <h1 align="center">🔭 OpenHostingNOC</h1>
